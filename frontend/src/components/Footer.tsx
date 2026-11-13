@@ -3,9 +3,10 @@ import { Terminal, Shield, ArrowUp, Zap } from 'lucide-react';
 
 interface FooterProps {
   onOpenPayment: () => void;
+  onOpenAdmin?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
+export const Footer: React.FC<FooterProps> = ({ onOpenPayment, onOpenAdmin }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -46,6 +47,17 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
                 <li><a href="#monetization" className="hover:text-teal-600">Career & Freelancing ROI</a></li>
                 <li><a href="#mentor" className="hover:text-teal-600">Instructor Bio</a></li>
                 <li><a href="#pricing" className="hover:text-teal-600">Pricing & Guarantee</a></li>
+                {onOpenAdmin && (
+                  <li>
+                    <button
+                      onClick={onOpenAdmin}
+                      className="text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1.5"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <span>Instructor Portal (MongoDB Live)</span>
+                    </button>
+                  </li>
+                )}
               </ul>
             </div>
 

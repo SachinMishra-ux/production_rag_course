@@ -9,6 +9,7 @@ interface PaymentModalProps {
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'upi_qr' | 'razorpay' | 'stripe'>('upi_qr');
+  const [enrolledStudentId, setEnrolledStudentId] = useState<string>('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -96,11 +97,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     // 1. Primary: Save to backend database (Live Cloud FastAPI on Render or local fallback)
     const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'https://production-rag-api-gwus.onrender.com';
     try {
-      await fetch(`${backendUrl}/api/register-student`, {
+      const res = await fetch(`${backendUrl}/api/register-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(studentPayload),
       });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.student_id) {
+          setEnrolledStudentId(json.student_id);
+        }
+      }
     } catch (err) {
       console.warn("Backend server not reached, saving to local persistent storage:", err);
     }
@@ -514,6 +521,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             <h3 className="text-2xl font-bold text-slate-900">
               Enrollment Confirmed! 🎉
             </h3>
+
+            {enrolledStudentId && (
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-mono">
+                <span>MongoDB Record ID:</span>
+                <strong className="text-teal-950 font-bold">{enrolledStudentId}</strong>
+              </div>
+            )}
 
             <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
               Welcome to Cohort 1 of <span className="text-teal-700 font-bold">Production RAG</span>, <span className="text-slate-900 font-bold">{name || "Engineer"}</span>! Your registration details have been saved. We have sent the calendar invites and syllabus to <span className="text-teal-700 font-mono">{email || "your email"}</span>.

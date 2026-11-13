@@ -3,9 +3,10 @@ import { Check, ShieldCheck, ArrowRight, Clock, Users, Tag, Sparkles, Copy, Chec
 
 interface PricingProps {
   onOpenPayment: () => void;
+  seatsRemaining?: number;
 }
 
-export const Pricing: React.FC<PricingProps> = ({ onOpenPayment }) => {
+export const Pricing: React.FC<PricingProps> = ({ onOpenPayment, seatsRemaining = 35 }) => {
   const [promoInput, setPromoInput] = useState('EARLYBIRD10');
   const [isPromoApplied, setIsPromoApplied] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -86,6 +87,11 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenPayment }) => {
 
               <div className="text-xs text-slate-500 font-mono mt-1.5">
                 (International Students: $99 USD via Stripe / Card)
+              </div>
+
+              <div className="mt-3.5 inline-flex items-center gap-2 text-xs font-mono text-slate-700 bg-teal-50/70 py-1.5 px-3.5 rounded-full border border-teal-200">
+                <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse"></span>
+                <span>Cohort Cap: 35 Seats • <strong className="text-teal-800 font-bold">{seatsRemaining} seats remaining</strong></span>
               </div>
 
               {/* Promo Code Input & Copy Box */}

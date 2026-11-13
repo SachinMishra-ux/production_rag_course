@@ -68,14 +68,16 @@ class PaymentVerificationRequest(BaseModel):
 @app.get("/")
 def health_check():
     students = database.get_all_students()
+    db_name = "MongoDB Atlas (Atlas Cloud Cluster)" if database.is_mongo_active else "SQLite (data/students.db)"
     return {
         "status": "healthy",
         "service": "Production RAG Cohort Backend & Database",
         "instructor": "Sachin Mishra (Senior Gen AI Engineer)",
         "instructor_upi": UPI_ID,
         "instructor_phone": INSTRUCTOR_PHONE,
-        "database": "SQLite (data/students.db)",
+        "database": db_name,
         "registered_students_count": len(students),
+        "seats_remaining": max(0, 35 - len(students)),
         "cohort": "Cohort 1 Live",
         "tuition_inr": 8999,
         "promo_code": "EARLYBIRD10",
