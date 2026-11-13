@@ -3,11 +3,10 @@ import { Terminal, Clock, Menu, X, Sparkles, ArrowRight } from 'lucide-react';
 
 interface NavbarProps {
   onOpenPayment: () => void;
-  onOpenAdmin?: () => void;
   seatsRemaining?: number;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenPayment, onOpenAdmin, seatsRemaining = 35 }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenPayment, seatsRemaining = 35 }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ hours: 47, minutes: 28, seconds: 14 });
@@ -84,16 +83,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenPayment, onOpenAdmin, seat
 
             {/* Action CTA */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {onOpenAdmin && (
-                <button
-                  onClick={onOpenAdmin}
-                  className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 text-xs font-mono font-medium transition-colors"
-                  title="View live MongoDB roster"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>MongoDB Live</span>
-                </button>
-              )}
               <button
                 onClick={onOpenPayment}
                 className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs sm:text-sm tracking-tight transition-all shadow-sm hover:shadow flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap"
@@ -125,15 +114,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenPayment, onOpenAdmin, seat
             <a href="#mentor" onClick={() => setMobileMenuOpen(false)} className="block hover:text-teal-600">Instructor: Sachin Mishra</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block hover:text-teal-600">Pricing & Guarantee</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block hover:text-teal-600">FAQ</a>
-            {onOpenAdmin && (
-              <button
-                onClick={() => { setMobileMenuOpen(false); onOpenAdmin(); }}
-                className="w-full text-left py-2 px-3 rounded-lg text-slate-600 hover:bg-slate-50 font-mono text-xs flex items-center justify-between"
-              >
-                <span>Instructor Dashboard (MongoDB)</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              </button>
-            )}
             <button
               onClick={() => { setMobileMenuOpen(false); onOpenPayment(); }}
               className="w-full py-2.5 bg-teal-600 text-white font-semibold rounded-xl text-center shadow-sm"

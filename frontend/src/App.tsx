@@ -9,12 +9,10 @@ import { Pricing } from './components/Pricing';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { PaymentModal } from './components/PaymentModal';
-import { AdminModal } from './components/AdminModal';
 import { fetchCohortStats, CohortStats } from './api';
 
 export default function App() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [stats, setStats] = useState<CohortStats>({
     registeredCount: 0,
     seatsRemaining: 35,
@@ -38,7 +36,6 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         onOpenPayment={() => setIsPaymentModalOpen(true)}
-        onOpenAdmin={() => setIsAdminModalOpen(true)}
         seatsRemaining={stats.seatsRemaining}
       />
 
@@ -75,19 +72,12 @@ export default function App() {
       {/* Footer */}
       <Footer
         onOpenPayment={() => setIsPaymentModalOpen(true)}
-        onOpenAdmin={() => setIsAdminModalOpen(true)}
       />
 
       {/* Checkout & Payment Modal */}
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-      />
-
-      {/* Instructor Admin Portal (MongoDB Live Sync) */}
-      <AdminModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
       />
     </div>
   );
