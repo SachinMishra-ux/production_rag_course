@@ -93,9 +93,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
       notes: `Registered via ${paymentDetails.payment_method} on landing page`
     };
 
-    // 1. Primary: Save to backend SQLite database (backend/data/students.db)
+    // 1. Primary: Save to backend database (Cloud FastAPI or local development)
+    const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
     try {
-      await fetch('http://localhost:8000/api/register-student', {
+      await fetch(`${backendUrl}/api/register-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(studentPayload),
