@@ -79,9 +79,16 @@ export const Mentor: React.FC = () => {
               <div className="relative group">
                 <div className="w-56 h-64 sm:w-64 sm:h-72 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-md">
                   <img
-                    src="/sachin_photo.jpg"
+                    src="./sachin_photo.jpg"
                     alt="Sachin Mishra - Senior Generative AI Engineer"
                     className="w-full h-full object-cover object-top"
+                    onError={(e) => {
+                      // Fallback to absolute or placeholder if needed
+                      const target = e.currentTarget;
+                      if (!target.src.endsWith('/sachin_photo.jpg')) {
+                        target.src = 'sachin_photo.jpg';
+                      }
+                    }}
                   />
                   <div className="absolute bottom-3 right-3 bg-white/95 text-teal-900 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-slate-200 flex items-center gap-1.5 shadow-sm">
                     <CheckCircle className="w-3.5 h-3.5 text-teal-600" /> Senior Gen AI Engineer

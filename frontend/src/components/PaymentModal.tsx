@@ -132,7 +132,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
         currency: "INR",
         name: "Production RAG Cohort",
         description: `4-Week Live Masterclass by Sachin Mishra (Code: ${isPromoApplied ? 'EARLYBIRD10' : 'NONE'})`,
-        image: "/sachin_photo.jpg",
+        image: "./sachin_photo.jpg",
         prefill: {
           name: name,
           email: email,

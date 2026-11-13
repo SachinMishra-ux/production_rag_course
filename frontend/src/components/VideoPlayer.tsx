@@ -89,7 +89,9 @@ export const VideoPlayer: React.FC = () => {
             
             <video
               ref={videoRef}
-              src="/production_rag_promo.mp4"
+              src="./production_rag_promo.mp4"
+              poster="./video_poster.jpg"
+              preload="auto"
               className="w-full h-full object-cover"
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={() => {
@@ -98,7 +100,11 @@ export const VideoPlayer: React.FC = () => {
               onEnded={() => setIsPlaying(false)}
               onClick={togglePlay}
               playsInline
-            />
+            >
+              <source src="./production_rag_promo.mp4" type="video/mp4" />
+              <source src="production_rag_promo.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
 
             {/* Big Center Play Button (overlay when paused) */}
             {!isPlaying && (
