@@ -2,7 +2,7 @@ import os
 from typing import Optional, List
 from fastapi import FastAPI, HTTPException, Request, Header, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 import razorpay
 from dotenv import load_dotenv
 
@@ -35,7 +35,7 @@ app.add_middleware(
 
 class StudentRegistration(BaseModel):
     name: str
-    email: EmailStr
+    email: str
     phone: str
     amount_inr: int = 8099
     payment_method: str = "upi_qr"  # 'upi_qr' | 'razorpay' | 'stripe'
@@ -49,7 +49,7 @@ class StudentRegistration(BaseModel):
 
 class OrderRequest(BaseModel):
     name: str
-    email: EmailStr
+    email: str
     phone: str
     amount_inr: int = 8999
     promo_code: Optional[str] = "EARLYBIRD10"
@@ -60,7 +60,7 @@ class PaymentVerificationRequest(BaseModel):
     razorpay_payment_id: str
     razorpay_signature: str
     name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     amount_inr: Optional[int] = 8099
     promo_code: Optional[str] = "EARLYBIRD10"
@@ -245,4 +245,5 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: Optional[str]
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
