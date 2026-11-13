@@ -93,8 +93,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
       notes: `Registered via ${paymentDetails.payment_method} on landing page`
     };
 
-    // 1. Primary: Save to backend database (Cloud FastAPI or local development)
-    const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
+    // 1. Primary: Save to backend database (Live Cloud FastAPI on Render or local fallback)
+    const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'https://production-rag-api-gwus.onrender.com';
     try {
       await fetch(`${backendUrl}/api/register-student`, {
         method: 'POST',

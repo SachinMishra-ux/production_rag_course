@@ -20,7 +20,18 @@ is_mongo_active = False
 if MONGODB_URI:
     try:
         from pymongo import MongoClient
-        mongo_client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        import certifi
+
+        try:
+            ca_file = certifi.where()
+            mongo_client = MongoClient(
+                MONGODB_URI,
+                tlsCAFile=ca_file,
+                serverSelectionTimeoutMS=8000
+            )
+        except Exception:
+            mongo_client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=8000)
+
         # Verify connection
         mongo_client.admin.command('ping')
         mongo_db = mongo_client[DB_NAME]
