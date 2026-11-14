@@ -203,10 +203,20 @@ def send_via_brevo(student: Dict[str, Any], subject: str, text_content: str, htm
     Sends transactional email via Brevo REST API over HTTPS port 443.
     Never blocked by Render free tier firewalls.
     """
+    cleaned_key = BREVO_API_KEY.strip()
+    # Check if user accidentally pasted SMTP relay key instead of REST API Key
+    if cleaned_key.startswith("xsmt"):
+        return {
+            "success": False,
+            "provider": "brevo_http_api",
+            "error": "Invalid Brevo Key Type: Your key starts with 'xsmt', which is an SMTP Relay Key, NOT a REST API Key.",
+            "help": "In Brevo Dashboard, go to 'SMTP & API' -> click the 'API Keys' tab (NOT the SMTP tab) -> click 'Generate a new API key'. The correct key MUST start with 'xkeysib-'."
+        }
+
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
         "accept": "application/json",
-        "api-key": BREVO_API_KEY,
+        "api-key": cleaned_key,
         "content-type": "application/json"
     }
     payload = {
@@ -228,16 +238,34 @@ def send_via_brevo(student: Dict[str, Any], subject: str, text_content: str, htm
         "htmlContent": html_content,
         "textContent": text_content
     }
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers=headers,
-        method="POST"
-    )
-    with urllib.request.urlopen(req, timeout=12) as resp:
-        res_data = resp.read().decode("utf-8")
-        print(f"[EmailService/Brevo] Dispatched successfully to {student['email']}")
-        return {"success": True, "provider": "brevo_http_api", "response": res_data}
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            res_data = resp.read().decode("utf-8")
+            print(f"[EmailService/Brevo] Dispatched successfully to {student['email']}")
+            return {"success": True, "provider": "brevo_http_api", "response": res_data}
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8") if e.fp else str(e)
+        print(f"[EmailService/Brevo] HTTP Error {e.code}: {err_body}")
+        return {
+            "success": False,
+            "provider": "brevo_http_api",
+            "status_code": e.code,
+            "error": err_body,
+            "help": "Ensure your Brevo API key is active and 'sachin19566@gmail.com' is confirmed under Brevo 'Senders & Domains'."
+        }
+    except Exception as e:
+        print(f"[EmailService/Brevo] Unexpected error: {e}")
+        return {
+            "success": False,
+            "provider": "brevo_http_api",
+            "error": str(e)
+        }
 
 def send_via_resend(student: Dict[str, Any], subject: str, text_content: str, html_content: str) -> Dict[str, Any]:
     """
@@ -316,15 +344,22 @@ def send_enrollment_email(student: Dict[str, Any]) -> Dict[str, Any]:
 
     # 1. Primary HTTP Provider: Brevo (Recommended for Render Free Tier)
     if BREVO_API_KEY:
-        try:
-            return send_via_brevo(student, subject, text_content, html_content)
-        except Exception as e:
-            print(f"[EmailService] Brevo API error: {e}")
+        brevo_res = send_via_brevo(student, subject, text_content, html_content)
+        if brevo_res.get("success"):
+            return brevo_res
+        
+        # If Brevo failed because of invalid key type (e.g. xsmt instead of xkeysib), return immediately
+        if "Invalid Brevo Key Type" in brevo_res.get("error", ""):
+            return brevo_res
+            
+        print(f"[EmailService] Brevo API error: {brevo_res.get('error')}. Falling back to next provider...")
 
     # 2. Secondary HTTP Provider: Resend
     if RESEND_API_KEY:
         try:
-            return send_via_resend(student, subject, text_content, html_content)
+            resend_res = send_via_resend(student, subject, text_content, html_content)
+            if resend_res.get("success"):
+                return resend_res
         except Exception as e:
             print(f"[EmailService] Resend API error: {e}")
 
