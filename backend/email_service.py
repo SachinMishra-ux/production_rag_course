@@ -1,19 +1,33 @@
 import os
+import json
 import smtplib
+import urllib.request
+import urllib.error
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+# SMTP Configuration
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "sachin19566@gmail.com")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
 SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "sachin19566@gmail.com")
 SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Sachin Mishra | Production RAG")
 
+# HTTP-Based Providers (Bypasses Render Free Tier outbound SMTP port restrictions on 25/465/587)
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "").strip()
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "Sachin Mishra <onboarding@resend.dev>").strip()
+
+# Instructor Official Contact Details
 INSTRUCTOR_EMAIL = os.getenv("INSTRUCTOR_EMAIL", "sachin19566@gmail.com")
-INSTRUCTOR_PHONE = os.getenv("INSTRUCTOR_PHONE", "+91 8928450584")
+raw_phone = os.getenv("INSTRUCTOR_PHONE", "+91 8928450584")
+if not raw_phone or "7820802707" in raw_phone:
+    INSTRUCTOR_PHONE = "+91 8928450584"
+else:
+    INSTRUCTOR_PHONE = raw_phone
 
 def generate_invoice_html(student: Dict[str, Any]) -> str:
     invoice_num = f"INV-PRAG-{str(student.get('id', student.get('_id', '000000')))[-6:].upper()}"
@@ -145,35 +159,16 @@ def generate_invoice_html(student: Dict[str, Any]) -> str:
 </body>
 </html>"""
 
-def send_enrollment_email(student: Dict[str, Any]) -> bool:
-    """
-    Sends an automated HTML confirmation and invoice receipt to the student.
-    Returns True if sent successfully, False otherwise.
-    """
+def build_email_contents(student: Dict[str, Any]):
     student_name = student.get("name", "Engineer")
-    student_email = student.get("email", "")
+    student_email = student.get("email", "").strip().lower()
     amount = student.get("amount_inr", 8099)
     utr_number = student.get("utr_number", "VERIFIED")
     invoice_num = f"INV-PRAG-{str(student.get('id', student.get('_id', '000000')))[-6:].upper()}"
 
-    if not student_email or "@" not in student_email:
-        print(f"[EmailService] Skipping email: invalid address '{student_email}'")
-        return False
-
-    # Check if SMTP is configured
-    if not SMTP_PASSWORD:
-        print(f"[EmailService] SMTP_PASSWORD not set. Logging invoice for {student_email} (Invoice: {invoice_num})")
-        return False
-
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"Enrollment Confirmed & Invoice {invoice_num} - Production RAG Cohort 1"
-        msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
-        msg["To"] = student_email
-        msg["Reply-To"] = INSTRUCTOR_EMAIL
-
-        # Plain-text version
-        text_content = f"""Hi {student_name},
+    subject = f"Enrollment Confirmed & Invoice {invoice_num} - Production RAG Cohort 1"
+    
+    text_content = f"""Hi {student_name},
 
 Welcome to Cohort 1 of the Production RAG Masterclass!
 
@@ -200,22 +195,167 @@ Sachin Mishra
 Senior Generative AI Engineer
 YouTube: @LocData | LinkedIn: sachin-mishra19566
 """
+    html_content = generate_invoice_html(student)
+    return subject, text_content, html_content
 
-        html_content = generate_invoice_html(student)
+def send_via_brevo(student: Dict[str, Any], subject: str, text_content: str, html_content: str) -> Dict[str, Any]:
+    """
+    Sends transactional email via Brevo REST API over HTTPS port 443.
+    Never blocked by Render free tier firewalls.
+    """
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    payload = {
+        "sender": {
+            "name": SMTP_FROM_NAME,
+            "email": SMTP_FROM_EMAIL
+        },
+        "to": [
+            {
+                "email": student["email"].strip().lower(),
+                "name": student.get("name", "Engineer")
+            }
+        ],
+        "replyTo": {
+            "email": INSTRUCTOR_EMAIL,
+            "name": "Sachin Mishra"
+        },
+        "subject": subject,
+        "htmlContent": html_content,
+        "textContent": text_content
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=12) as resp:
+        res_data = resp.read().decode("utf-8")
+        print(f"[EmailService/Brevo] Dispatched successfully to {student['email']}")
+        return {"success": True, "provider": "brevo_http_api", "response": res_data}
 
-        part1 = MIMEText(text_content, "plain")
-        part2 = MIMEText(html_content, "html")
+def send_via_resend(student: Dict[str, Any], subject: str, text_content: str, html_content: str) -> Dict[str, Any]:
+    """
+    Sends transactional email via Resend REST API over HTTPS port 443.
+    """
+    url = "https://api.resend.com/emails"
+    headers = {
+        "Authorization": f"Bearer {RESEND_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "from": RESEND_FROM_EMAIL,
+        "to": [student["email"].strip().lower()],
+        "reply_to": INSTRUCTOR_EMAIL,
+        "subject": subject,
+        "html": html_content,
+        "text": text_content
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=12) as resp:
+        res_data = resp.read().decode("utf-8")
+        print(f"[EmailService/Resend] Dispatched successfully to {student['email']}")
+        return {"success": True, "provider": "resend_http_api", "response": res_data}
 
-        msg.attach(part1)
-        msg.attach(part2)
+def send_via_smtp(student: Dict[str, Any], subject: str, text_content: str, html_content: str) -> Dict[str, Any]:
+    """
+    Sends email via SMTP (Gmail, custom mail server).
+    Note: Render Free Tier blocks outbound ports 25, 465, and 587.
+    """
+    student_email = student["email"].strip().lower()
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+    msg["To"] = student_email
+    msg["Reply-To"] = INSTRUCTOR_EMAIL
 
-        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15)
+    part1 = MIMEText(text_content, "plain")
+    part2 = MIMEText(html_content, "html")
+    msg.attach(part1)
+    msg.attach(part2)
+
+    # Try SMTP with SSL if port 465, otherwise STARTTLS
+    if SMTP_PORT == 465:
+        server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=10)
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        server.sendmail(SMTP_FROM_EMAIL, [student_email], msg.as_string())
+        server.quit()
+    else:
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.sendmail(SMTP_FROM_EMAIL, [student_email], msg.as_string())
         server.quit()
-        print(f"[EmailService] Invoice & confirmation email successfully sent to {student_email}!")
-        return True
-    except Exception as e:
-        print(f"[EmailService] Error sending email to {student_email}: {e}")
-        return False
+
+    print(f"[EmailService/SMTP] Dispatched successfully to {student_email}")
+    return {"success": True, "provider": "smtp", "response": "OK"}
+
+def send_enrollment_email(student: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Multi-provider email dispatcher with automatic fallback:
+    1. Brevo HTTP API (Port 443 - zero domain DNS required, 300 free/day)
+    2. Resend HTTP API (Port 443)
+    3. Direct SMTP (Gmail / Custom Server)
+    """
+    student_email = student.get("email", "").strip().lower()
+    if not student_email or "@" not in student_email:
+        print(f"[EmailService] Skipping email: invalid address '{student_email}'")
+        return {"success": False, "error": f"Invalid email '{student_email}'"}
+
+    subject, text_content, html_content = build_email_contents(student)
+
+    # 1. Primary HTTP Provider: Brevo (Recommended for Render Free Tier)
+    if BREVO_API_KEY:
+        try:
+            return send_via_brevo(student, subject, text_content, html_content)
+        except Exception as e:
+            print(f"[EmailService] Brevo API error: {e}")
+
+    # 2. Secondary HTTP Provider: Resend
+    if RESEND_API_KEY:
+        try:
+            return send_via_resend(student, subject, text_content, html_content)
+        except Exception as e:
+            print(f"[EmailService] Resend API error: {e}")
+
+    # 3. Standard SMTP (Works on local dev and Render paid plans)
+    if SMTP_PASSWORD:
+        try:
+            return send_via_smtp(student, subject, text_content, html_content)
+        except Exception as e:
+            err_msg = str(e)
+            is_firewall = any(term in err_msg.lower() for term in ["timeout", "timed out", "refused", "unreachable"])
+            print(f"[EmailService] SMTP error for {student_email}: {err_msg}")
+            
+            help_advice = (
+                "Render Free Web Services block outbound ports 25, 465, and 587 to prevent spam. "
+                "To send emails reliably over standard HTTPS port 443, sign up at brevo.com (100% free, 300 emails/day), "
+                "verify 'sachin19566@gmail.com', and set BREVO_API_KEY in Render Environment Variables."
+                if is_firewall else
+                f"SMTP Error: {err_msg}. Verify your Google App Password and 2-step verification."
+            )
+            return {
+                "success": False,
+                "provider": "smtp",
+                "error": err_msg,
+                "render_port_blocked": is_firewall,
+                "help": help_advice
+            }
+
+    print(f"[EmailService] No active email provider configured (BREVO_API_KEY, RESEND_API_KEY, or SMTP_PASSWORD).")
+    return {
+        "success": False,
+        "provider": "none",
+        "error": "No email provider credentials configured on server.",
+        "help": "Set BREVO_API_KEY (recommended) or SMTP_PASSWORD in Render environment variables."
+    }

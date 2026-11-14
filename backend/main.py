@@ -17,7 +17,11 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "rzp_test_placeholderSecr
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 UPI_ID = os.getenv("UPI_ID", "sm2157982-1@okhdfcbank")
 INSTRUCTOR_EMAIL = os.getenv("INSTRUCTOR_EMAIL", "sachin19566@gmail.com")
-INSTRUCTOR_PHONE = os.getenv("INSTRUCTOR_PHONE", "+91 8928450584")
+raw_phone = os.getenv("INSTRUCTOR_PHONE", "+91 8928450584")
+if not raw_phone or "7820802707" in raw_phone:
+    INSTRUCTOR_PHONE = "+91 8928450584"
+else:
+    INSTRUCTOR_PHONE = raw_phone
 
 client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
@@ -317,6 +321,49 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: Optional[str]
             raise HTTPException(status_code=400, detail="Invalid webhook signature")
             
     return {"status": "received"}
+
+@app.get("/api/test-email")
+def test_email(to: Optional[str] = "sachin19566@gmail.com"):
+    """
+    Live diagnostic endpoint to verify email delivery from Render.
+    Hit this in browser or terminal to immediately see exact network/provider logs.
+    """
+    target_email = to.strip().lower() if to else "sachin19566@gmail.com"
+    sample_student = {
+        "id": "DIAG99",
+        "name": "Sachin Mishra (Live Diagnostic Test)",
+        "email": target_email,
+        "phone": INSTRUCTOR_PHONE,
+        "amount_inr": 8099,
+        "payment_method": "upi_qr",
+        "utr_number": "TEST_DIAGNOSTIC",
+        "promo_code": "EARLYBIRD10"
+    }
+
+    result = email_service.send_enrollment_email(sample_student)
+    
+    # Mask password for secure diagnostic output
+    smtp_pw = os.getenv("SMTP_PASSWORD", "")
+    masked_pw = f"{smtp_pw[:2]}****{smtp_pw[-2:]}" if len(smtp_pw) >= 4 else ("SET" if smtp_pw else "NOT_SET")
+    brevo_key = os.getenv("BREVO_API_KEY", "")
+    masked_brevo = f"{brevo_key[:4]}****{brevo_key[-4:]}" if len(brevo_key) >= 8 else ("SET" if brevo_key else "NOT_SET")
+
+    return {
+        "status": "tested",
+        "recipient": target_email,
+        "email_delivery_result": result,
+        "diagnostics": {
+            "brevo_api_configured": bool(brevo_key),
+            "brevo_key_preview": masked_brevo,
+            "resend_api_configured": bool(os.getenv("RESEND_API_KEY")),
+            "smtp_configured": bool(smtp_pw),
+            "smtp_user": os.getenv("SMTP_USER", "sachin19566@gmail.com"),
+            "smtp_host": os.getenv("SMTP_HOST", "smtp.gmail.com"),
+            "smtp_port": os.getenv("SMTP_PORT", "587"),
+            "smtp_password_status": masked_pw,
+            "instructor_phone": INSTRUCTOR_PHONE
+        }
+    }
 
 if __name__ == "__main__":
     import uvicorn
