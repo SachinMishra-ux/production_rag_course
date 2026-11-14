@@ -204,6 +204,9 @@ def send_via_brevo(student: Dict[str, Any], subject: str, text_content: str, htm
     Never blocked by Render free tier firewalls.
     """
     cleaned_key = BREVO_API_KEY.strip()
+    sender_email = os.getenv("BREVO_SENDER_EMAIL", os.getenv("SMTP_FROM_EMAIL", "sachin19566@gmail.com")).strip().lower()
+    sender_name = os.getenv("SMTP_FROM_NAME", "Sachin Mishra | Production RAG").strip()
+
     # Check if user accidentally pasted SMTP relay key instead of REST API Key
     if cleaned_key.startswith("xsmt"):
         return {
@@ -221,8 +224,8 @@ def send_via_brevo(student: Dict[str, Any], subject: str, text_content: str, htm
     }
     payload = {
         "sender": {
-            "name": SMTP_FROM_NAME,
-            "email": SMTP_FROM_EMAIL
+            "name": sender_name,
+            "email": sender_email
         },
         "to": [
             {
@@ -248,16 +251,26 @@ def send_via_brevo(student: Dict[str, Any], subject: str, text_content: str, htm
         with urllib.request.urlopen(req, timeout=12) as resp:
             res_data = resp.read().decode("utf-8")
             print(f"[EmailService/Brevo] Dispatched successfully to {student['email']}")
-            return {"success": True, "provider": "brevo_http_api", "response": res_data}
+            return {
+                "success": True,
+                "provider": "brevo_http_api",
+                "sender": sender_email,
+                "response": json.loads(res_data) if res_data.startswith("{") else res_data
+            }
     except urllib.error.HTTPError as e:
         err_body = e.read().decode("utf-8") if e.fp else str(e)
-        print(f"[EmailService/Brevo] HTTP Error {e.code}: {err_body}")
+        try:
+            parsed_err = json.loads(err_body)
+        except Exception:
+            parsed_err = err_body
+        print(f"[EmailService/Brevo] HTTP Error {e.code}: {parsed_err}")
         return {
             "success": False,
             "provider": "brevo_http_api",
             "status_code": e.code,
-            "error": err_body,
-            "help": "Ensure your Brevo API key is active and 'sachin19566@gmail.com' is confirmed under Brevo 'Senders & Domains'."
+            "sender_attempted": sender_email,
+            "error": parsed_err,
+            "help": "If error mentions 'sender', go to Brevo -> Senders & Domains and verify your sender email. If 'unauthorized', re-check the API key."
         }
     except Exception as e:
         print(f"[EmailService/Brevo] Unexpected error: {e}")
@@ -345,14 +358,8 @@ def send_enrollment_email(student: Dict[str, Any]) -> Dict[str, Any]:
     # 1. Primary HTTP Provider: Brevo (Recommended for Render Free Tier)
     if BREVO_API_KEY:
         brevo_res = send_via_brevo(student, subject, text_content, html_content)
-        if brevo_res.get("success"):
-            return brevo_res
-        
-        # If Brevo failed because of invalid key type (e.g. xsmt instead of xkeysib), return immediately
-        if "Invalid Brevo Key Type" in brevo_res.get("error", ""):
-            return brevo_res
-            
-        print(f"[EmailService] Brevo API error: {brevo_res.get('error')}. Falling back to next provider...")
+        # Always return Brevo's direct result so errors are fully transparent
+        return brevo_res
 
     # 2. Secondary HTTP Provider: Resend
     if RESEND_API_KEY:
