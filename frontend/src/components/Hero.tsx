@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, CheckCircle2, FileText, Database, Cpu, TrendingUp, ArrowRight, ShieldCheck, Layers, Sparkles } from 'lucide-react';
+import { Play, CheckCircle2, FileText, Database, Cpu, TrendingUp, ArrowRight, ShieldCheck, Layers, Sparkles, Linkedin, Youtube } from 'lucide-react';
 
 interface HeroProps {
   onOpenPayment: () => void;
@@ -33,7 +33,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenPayment, onScrollToVideo }) =>
 
         {/* Hero Title */}
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.18] sm:leading-[1.15]">
             Why 95% of RAG Fails in Production —
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600">
@@ -41,44 +41,62 @@ export const Hero: React.FC<HeroProps> = ({ onOpenPayment, onScrollToVideo }) =>
             </span>
           </h1>
 
-          <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="mt-4 sm:mt-5 text-sm sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed px-2 sm:px-0">
             Standard RAG tutorials break when faced with real enterprise challenges: scanned PDFs with zero extractable text, complex technical schematics, multi-hundred document bulk ingestion, and high-concurrency traffic.
           </p>
 
-          <p className="mt-3 text-sm text-teal-800 font-medium max-w-2xl mx-auto bg-teal-50/80 border border-teal-200/70 py-1.5 px-4 rounded-xl">
+          <p className="mt-3 text-xs sm:text-sm text-teal-800 font-medium max-w-2xl mx-auto bg-teal-50/80 border border-teal-200/70 py-1.5 px-3 sm:px-4 rounded-xl">
             Ingest 100-200+ heavy PDFs • Scale to millions of vectors • Deliver sub-200ms latency via async APIs • Monetize via freelance retainers (₹15k-₹50k) and senior AI roles (20-30 LPA).
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+          <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-3.5 w-full max-w-md sm:max-w-none mx-auto">
             <button
               onClick={onOpenPayment}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm tracking-tight shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto px-6 sm:px-7 py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs sm:text-sm tracking-tight shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group"
             >
-              <span>Enroll in Cohort (₹8,999 • Code EARLYBIRD10 for 10% Off)</span>
+              <span>Enroll in Cohort (₹8,999 • Code EARLYBIRD10)</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
             <button
               onClick={onScrollToVideo}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm shadow-sm transition-all flex items-center justify-center gap-2.5"
+              className="w-full sm:w-auto px-5 sm:px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-2.5"
             >
               <Play className="w-4 h-4 text-teal-600 fill-teal-600" />
               <span>Watch Architecture Walkthrough</span>
             </button>
           </div>
 
-          {/* Trust Guarantees */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-medium">
+          {/* Trust Guarantees & Social Proof */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-slate-500 font-medium px-2">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" /> Complete Production Codebase Included
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" /> Production Codebase
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-teal-600" /> Live Weekend Classes + Lifetime Recordings
+              <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" /> Live Weekend Classes
             </span>
             <span className="flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-indigo-600" /> 1:1 Code Reviews with Sachin Mishra
+              <Layers className="w-4 h-4 text-indigo-600 shrink-0" /> 1:1 Reviews with Sachin
             </span>
+            <a
+              href="https://www.linkedin.com/in/sachin-mishra19566/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#0A66C2] hover:underline font-semibold"
+            >
+              <Linkedin className="w-3.5 h-3.5 fill-current shrink-0" />
+              <span>LinkedIn Verified</span>
+            </a>
+            <a
+              href="https://www.youtube.com/@LocData"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#FF0000] hover:underline font-semibold"
+            >
+              <Youtube className="w-3.5 h-3.5 fill-current shrink-0" />
+              <span>YouTube: @LocData</span>
+            </a>
           </div>
 
         </div>

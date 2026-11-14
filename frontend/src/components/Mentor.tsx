@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Users, Star, CheckCircle, MessageSquare, Briefcase, Sparkles } from 'lucide-react';
+import { Award, Users, Star, CheckCircle, MessageSquare, Briefcase, Sparkles, Linkedin, Youtube, ExternalLink, Play, Video } from 'lucide-react';
 
 export const Mentor: React.FC = () => {
   const studentReviews = [
@@ -96,10 +96,35 @@ export const Mentor: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-4 text-center">
+              <div className="mt-4 text-center w-full">
                 <h3 className="text-lg font-bold text-slate-900">Sachin Mishra</h3>
                 <p className="text-xs font-semibold text-teal-700">Senior Generative AI Engineer</p>
                 <p className="text-xs text-slate-500 mt-0.5">6+ Years Enterprise AI/ML Experience</p>
+
+                {/* Social Badges with Official Logos */}
+                <div className="mt-3.5 flex flex-col sm:flex-row md:flex-col gap-2 w-full max-w-[240px] mx-auto">
+                  <a
+                    href="https://www.linkedin.com/in/sachin-mishra19566/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[#0A66C2] hover:bg-[#084e96] text-white text-xs font-semibold shadow-sm transition-all hover:shadow"
+                  >
+                    <Linkedin className="w-4 h-4 fill-current shrink-0" />
+                    <span>LinkedIn Profile</span>
+                    <ExternalLink className="w-3 h-3 opacity-75 shrink-0" />
+                  </a>
+
+                  <a
+                    href="https://www.youtube.com/@LocData"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-semibold shadow-sm transition-all hover:shadow"
+                  >
+                    <Youtube className="w-4 h-4 fill-current shrink-0" />
+                    <span>YouTube (@LocData)</span>
+                    <ExternalLink className="w-3 h-3 opacity-75 shrink-0" />
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -139,6 +164,56 @@ export const Mentor: React.FC = () => {
 
             </div>
 
+          </div>
+        </div>
+
+        {/* YouTube Teaching Session Showcase */}
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-6 sm:p-10 border border-slate-700/80 shadow-xl max-w-5xl mx-auto mb-16 text-white overflow-hidden relative">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold mb-2">
+                <Youtube className="w-4 h-4 fill-red-500 text-red-500 shrink-0" /> LIVE TEACHING DEMO ON YOUTUBE
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight">
+                Watch Sachin in Action: Live Architecture Session
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+                Experience Sachin's hands-on teaching style, line-by-line code breakdowns, and production system design before you enroll.
+              </p>
+            </div>
+
+            <a
+              href="https://www.youtube.com/watch?v=ODjK9O4I-aA&t=12s"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-md transition-all shrink-0"
+            >
+              <Youtube className="w-4 h-4 fill-white shrink-0" />
+              <span>Watch on YouTube (@LocData)</span>
+              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+            </a>
+          </div>
+
+          {/* Responsive YouTube Embed Container */}
+          <div className="relative rounded-2xl overflow-hidden bg-black aspect-video border border-slate-700 shadow-2xl">
+            <iframe
+              className="w-full h-full"
+              src="https://www.youtube-nocookie.com/embed/ODjK9O4I-aA?start=12"
+              title="Sachin Mishra Live Generative AI Session on YouTube"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 font-mono pt-3 border-t border-slate-700/60">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              Official Channel: <a href="https://www.youtube.com/@LocData" target="_blank" rel="noopener noreferrer" className="text-red-400 hover:underline font-semibold">@LocData</a>
+            </span>
+            <span className="text-slate-400">
+              Live Session: Generative AI & System Architecture
+            </span>
           </div>
         </div>
 

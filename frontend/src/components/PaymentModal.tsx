@@ -227,8 +227,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl p-6 sm:p-8 overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl p-5 sm:p-8 overflow-hidden my-4 sm:my-8 max-h-[92vh] overflow-y-auto">
         
         {/* Close Button */}
         <button
@@ -303,7 +303,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   placeholder="Full Name *"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-teal-600 font-mono"
+                  className="w-full px-3 py-2.5 text-sm sm:text-xs rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-teal-600 font-mono"
                   required
                 />
                 <input
@@ -311,7 +311,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   placeholder="WhatsApp Number *"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-teal-600 font-mono"
+                  className="w-full px-3 py-2.5 text-sm sm:text-xs rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-teal-600 font-mono"
                   required
                 />
               </div>
@@ -320,7 +320,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                 placeholder="Email Address (for calendar invites & code repo access) *"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-teal-600 font-mono"
+                className="w-full px-3 py-2.5 text-sm sm:text-xs rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-teal-600 font-mono"
                 required
               />
             </div>

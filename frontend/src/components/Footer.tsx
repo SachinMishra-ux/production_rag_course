@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Shield, ArrowUp, Zap } from 'lucide-react';
+import { Terminal, Shield, ArrowUp, Zap, Linkedin, Youtube, ExternalLink } from 'lucide-react';
 
 interface FooterProps {
   onOpenPayment: () => void;
@@ -33,6 +33,29 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
               <div className="text-[11px] font-mono text-teal-700">
                 Direct Contact: <a href="mailto:contact@productionrag.dev" className="underline hover:text-slate-900">contact@productionrag.dev</a>
               </div>
+
+              {/* Social Channels with Official Logos */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <a
+                  href="https://www.linkedin.com/in/sachin-mishra19566/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 text-[#0A66C2] font-semibold text-xs transition-colors"
+                >
+                  <Linkedin className="w-3.5 h-3.5 fill-current" />
+                  <span>LinkedIn Profile</span>
+                </a>
+
+                <a
+                  href="https://www.youtube.com/@LocData"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FF0000]/10 hover:bg-[#FF0000]/20 text-[#FF0000] font-semibold text-xs transition-colors"
+                >
+                  <Youtube className="w-3.5 h-3.5 fill-current" />
+                  <span>YouTube: @LocData</span>
+                </a>
+              </div>
             </div>
 
             {/* Col 2: Navigation */}
@@ -46,6 +69,18 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
                 <li><a href="#monetization" className="hover:text-teal-600">Career & Freelancing ROI</a></li>
                 <li><a href="#mentor" className="hover:text-teal-600">Instructor Bio</a></li>
                 <li><a href="#pricing" className="hover:text-teal-600">Pricing & Guarantee</a></li>
+                <li>
+                  <a
+                    href="https://www.youtube.com/watch?v=ODjK9O4I-aA&t=12s"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-red-600 text-red-600/90 font-semibold flex items-center gap-1"
+                  >
+                    <Youtube className="w-3 h-3 fill-current shrink-0" />
+                    <span>Watch Live Demo Video</span>
+                    <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                  </a>
+                </li>
               </ul>
             </div>
 
