@@ -124,6 +124,16 @@ export const Mentor: React.FC = () => {
                     <span>YouTube (@LocData)</span>
                     <ExternalLink className="w-3 h-3 opacity-75 shrink-0" />
                   </a>
+
+                  <a
+                    href="https://www.youtube.com/watch?v=ODjK9O4I-aA&t=12s"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-[11px] font-mono font-medium transition-colors shadow-2xs"
+                  >
+                    <Video className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                    <span>Featured Live Session ↗</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -167,53 +177,64 @@ export const Mentor: React.FC = () => {
           </div>
         </div>
 
-        {/* YouTube Teaching Session Showcase */}
+        {/* YouTube Teaching Session Showcase - LocData Channel */}
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-6 sm:p-10 border border-slate-700/80 shadow-xl max-w-5xl mx-auto mb-16 text-white overflow-hidden relative">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold mb-2">
-                <Youtube className="w-4 h-4 fill-red-500 text-red-500 shrink-0" /> LIVE TEACHING DEMO ON YOUTUBE
+                <Youtube className="w-4 h-4 fill-red-500 text-red-500 shrink-0" /> LOCDATA OFFICIAL YOUTUBE CHANNEL
               </div>
               <h3 className="text-xl sm:text-2xl font-bold tracking-tight">
-                Watch Sachin in Action: Live Architecture Session
+                Watch Sachin in Action on LocData
               </h3>
               <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-                Experience Sachin's hands-on teaching style, line-by-line code breakdowns, and production system design before you enroll.
+                Experience Sachin's hands-on engineering tutorials covering Dynamic RAG architectures, LLM fundamentals, and Agentic AI workflows on his official channel <strong className="text-white">@LocData</strong>.
               </p>
             </div>
 
-            <a
-              href="https://www.youtube.com/watch?v=ODjK9O4I-aA&t=12s"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-md transition-all shrink-0"
-            >
-              <Youtube className="w-4 h-4 fill-white shrink-0" />
-              <span>Watch on YouTube (@LocData)</span>
-              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-            </a>
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <a
+                href="https://www.youtube.com/@LocData"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-md transition-all shrink-0"
+              >
+                <Youtube className="w-4 h-4 fill-white shrink-0" />
+                <span>Visit @LocData Channel</span>
+                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+              </a>
+            </div>
           </div>
 
-          {/* Responsive YouTube Embed Container */}
+          {/* Responsive YouTube Embed Container for LocData RAG Tutorial */}
           <div className="relative rounded-2xl overflow-hidden bg-black aspect-video border border-slate-700 shadow-2xl">
             <iframe
               className="w-full h-full"
-              src="https://www.youtube-nocookie.com/embed/ODjK9O4I-aA?start=12"
-              title="Sachin Mishra Live Generative AI Session on YouTube"
+              src="https://www.youtube-nocookie.com/embed/FVZdR8o_nD0"
+              title="Build Dynamic RAG with Google ADK by LocData (Sachin Mishra)"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               loading="lazy"
             />
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 font-mono pt-3 border-t border-slate-700/60">
-            <span className="flex items-center gap-1.5">
+          {/* Featured Appearance & Channel Footer */}
+          <div className="mt-5 pt-4 border-t border-slate-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-slate-300 font-mono">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-              Official Channel: <a href="https://www.youtube.com/@LocData" target="_blank" rel="noopener noreferrer" className="text-red-400 hover:underline font-semibold">@LocData</a>
-            </span>
-            <span className="text-slate-400">
-              Live Session: Generative AI & System Architecture
-            </span>
+              <span>Tutorial: <strong>Build Dynamic RAG Pipelines</strong> (@LocData)</span>
+            </div>
+
+            {/* Link for Sachin's Featured Masterclass appearance ("You on YouTube") */}
+            <a
+              href="https://www.youtube.com/watch?v=ODjK9O4I-aA&t=12s"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-teal-300 hover:text-white font-mono text-[11px] transition-colors"
+            >
+              <Video className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+              <span>Watch Sachin's Featured Masterclass Session ↗</span>
+            </a>
           </div>
         </div>
 
