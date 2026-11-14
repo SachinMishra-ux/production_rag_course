@@ -177,6 +177,47 @@ def get_all_students() -> List[Dict[str, Any]]:
         conn.close()
         return [dict(row) for row in rows]
 
+def get_student_by_id(student_id_or_email: str) -> Optional[Dict[str, Any]]:
+    """
+    Retrieves a single student record by their MongoDB ObjectId, SQLite integer ID, or Email.
+    """
+    if not student_id_or_email:
+        return None
+
+    cleaned = str(student_id_or_email).strip()
+
+    if is_mongo_active and mongo_collection is not None:
+        try:
+            from bson.objectid import ObjectId
+            if len(cleaned) == 24:
+                doc = mongo_collection.find_one({"_id": ObjectId(cleaned)})
+                if doc:
+                    doc["id"] = str(doc.get("_id", ""))
+                    if "_id" in doc:
+                        del doc["_id"]
+                    return doc
+        except Exception:
+            pass
+
+        # Query by email or fallback id
+        doc = mongo_collection.find_one({"$or": [{"email": cleaned.lower()}, {"id": cleaned}]})
+        if doc:
+            doc["id"] = str(doc.get("_id", ""))
+            if "_id" in doc:
+                del doc["_id"]
+            return doc
+        return None
+    else:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        if cleaned.isdigit():
+            cursor.execute("SELECT * FROM students WHERE id = ? OR email = ? LIMIT 1", (int(cleaned), cleaned.lower()))
+        else:
+            cursor.execute("SELECT * FROM students WHERE email = ? LIMIT 1", (cleaned.lower(),))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
 def export_students_to_csv() -> str:
     """
     Exports all student records to a clean CSV spreadsheet string.

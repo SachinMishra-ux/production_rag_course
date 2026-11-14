@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize2, Film, CheckCircle2, AlertTriangle, Zap, DollarSign, UserCheck } from 'lucide-react';
+import promoVideoSrc from '../assets/production_rag_promo.mp4';
+import videoPosterImg from '../assets/video_poster.jpg';
 
 export const VideoPlayer: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -89,9 +91,9 @@ export const VideoPlayer: React.FC = () => {
             
             <video
               ref={videoRef}
-              src="./production_rag_promo.mp4"
-              poster="./video_poster.jpg"
-              preload="auto"
+              src={promoVideoSrc}
+              poster={videoPosterImg}
+              preload="metadata"
               className="w-full h-full object-cover"
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={() => {
@@ -101,8 +103,10 @@ export const VideoPlayer: React.FC = () => {
               onClick={togglePlay}
               playsInline
             >
+              <source src={promoVideoSrc} type="video/mp4" />
               <source src="./production_rag_promo.mp4" type="video/mp4" />
               <source src="production_rag_promo.mp4" type="video/mp4" />
+              <source src="https://raw.githubusercontent.com/SachinMishra-ux/production_rag_course/main/frontend/public/production_rag_promo.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
 

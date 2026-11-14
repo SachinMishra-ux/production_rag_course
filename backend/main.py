@@ -1,12 +1,14 @@
 import os
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException, Request, Header, Response
+from fastapi import FastAPI, HTTPException, Request, Header, Response, BackgroundTasks
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import razorpay
 from dotenv import load_dotenv
 
 import database
+import email_service
 
 load_dotenv()
 
@@ -14,7 +16,8 @@ RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_placeholderKey")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "rzp_test_placeholderSecret")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 UPI_ID = os.getenv("UPI_ID", "sm2157982-1@okhdfcbank")
-INSTRUCTOR_PHONE = os.getenv("INSTRUCTOR_PHONE", "7820802707")
+INSTRUCTOR_EMAIL = os.getenv("INSTRUCTOR_EMAIL", "sachin19566@gmail.com")
+INSTRUCTOR_PHONE = os.getenv("INSTRUCTOR_PHONE", "+91 8928450584")
 
 client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
@@ -85,10 +88,11 @@ def health_check():
     }
 
 @app.post("/api/register-student")
-def register_student(payload: StudentRegistration):
+def register_student(payload: StudentRegistration, background_tasks: BackgroundTasks):
     """
-    Stores incoming student enrollment & payment records in the persistent SQLite database.
+    Stores incoming student enrollment & payment records in the persistent database.
     Used for UPI QR payments, Razorpay completions, and Stripe checkouts.
+    Dispatches automated confirmation email and tax invoice in the background.
     """
     try:
         record_id = database.save_student(
@@ -105,18 +109,64 @@ def register_student(payload: StudentRegistration):
             notes=payload.notes,
             currency=payload.currency
         )
+
+        student_dict = {
+            "id": record_id,
+            "name": payload.name,
+            "email": payload.email,
+            "phone": payload.phone,
+            "amount_inr": payload.amount_inr,
+            "payment_method": payload.payment_method,
+            "promo_code": payload.promo_code or "EARLYBIRD10",
+            "utr_number": payload.utr_number or "VERIFIED",
+            "status": payload.status,
+            "currency": payload.currency
+        }
+
+        # Dispatch automated tax invoice & confirmation email via background task
+        background_tasks.add_task(email_service.send_enrollment_email, student_dict)
+
         return {
             "success": True,
-            "message": "Student registration saved successfully into database.",
+            "message": "Student registration saved successfully and invoice queued.",
             "student_id": record_id,
+            "invoice_url": f"/api/invoice/{record_id}",
             "name": payload.name,
             "email": payload.email,
             "payment_method": payload.payment_method,
             "status": payload.status,
-            "discord_invite": "https://discord.gg/production-rag"
+            "instructor_contact": {
+                "name": "Sachin Mishra",
+                "email": INSTRUCTOR_EMAIL,
+                "whatsapp": INSTRUCTOR_PHONE
+            },
+            "discord_note": "VIP Discord invite will be sent to your WhatsApp and email prior to orientation."
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/api/invoice/{student_id_or_email}", response_class=HTMLResponse)
+def get_student_invoice(student_id_or_email: str):
+    """
+    Returns an official, print-ready HTML Tax Invoice / Receipt for the student.
+    Can be viewed in browser or printed/saved as PDF.
+    """
+    student = database.get_student_by_id(student_id_or_email)
+    if not student:
+        # Build placeholder invoice if direct link used
+        student = {
+            "id": student_id_or_email,
+            "name": "Enrolled Engineer",
+            "email": student_id_or_email if "@" in student_id_or_email else "student@productionrag.dev",
+            "phone": "Verified Student",
+            "amount_inr": 8099,
+            "payment_method": "UPI / Card",
+            "utr_number": "VERIFIED",
+            "promo_code": "EARLYBIRD10"
+        }
+    
+    html_content = email_service.generate_invoice_html(student)
+    return HTMLResponse(content=html_content, status_code=200)
 
 @app.get("/api/students")
 def list_students():
@@ -193,9 +243,10 @@ def create_order(payload: OrderRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/verify-payment")
-def verify_payment(payload: PaymentVerificationRequest):
+def verify_payment(payload: PaymentVerificationRequest, background_tasks: BackgroundTasks):
     """
-    Cryptographically verifies Razorpay signature and updates the student record to 'paid'.
+    Cryptographically verifies Razorpay signature, updates the student record to 'paid',
+    and dispatches the tax invoice & enrollment confirmation email.
     """
     try:
         params_dict = {
@@ -205,9 +256,10 @@ def verify_payment(payload: PaymentVerificationRequest):
         }
         client.utility.verify_payment_signature(params_dict)
         
+        record_id = None
         # Save or update verified payment in database
         if payload.name and payload.email and payload.phone:
-            database.save_student(
+            record_id = database.save_student(
                 name=payload.name,
                 email=payload.email,
                 phone=payload.phone,
@@ -219,10 +271,31 @@ def verify_payment(payload: PaymentVerificationRequest):
                 status="paid"
             )
 
+            student_dict = {
+                "id": record_id,
+                "name": payload.name,
+                "email": payload.email,
+                "phone": payload.phone,
+                "amount_inr": payload.amount_inr or 8099,
+                "payment_method": "razorpay",
+                "promo_code": payload.promo_code or "EARLYBIRD10",
+                "utr_number": payload.razorpay_payment_id,
+                "status": "paid",
+                "currency": "INR"
+            }
+            background_tasks.add_task(email_service.send_enrollment_email, student_dict)
+
         return {
             "success": True,
             "message": "Payment verified successfully. Welcome to Production RAG Cohort 1!",
-            "discord_invite": "https://discord.gg/production-rag"
+            "student_id": record_id,
+            "invoice_url": f"/api/invoice/{record_id}" if record_id else None,
+            "instructor_contact": {
+                "name": "Sachin Mishra",
+                "email": INSTRUCTOR_EMAIL,
+                "whatsapp": INSTRUCTOR_PHONE
+            },
+            "discord_note": "VIP Discord invite will be sent to your WhatsApp and email prior to orientation."
         }
     except razorpay.errors.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Signature verification failed. Invalid payment.")

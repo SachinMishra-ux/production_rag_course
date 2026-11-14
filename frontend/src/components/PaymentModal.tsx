@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, ShieldCheck, QrCode, CreditCard, Smartphone, Copy, Check, Sparkles, ExternalLink, CheckCheck, Phone } from 'lucide-react';
+import { X, CheckCircle, ShieldCheck, QrCode, CreditCard, Smartphone, Copy, Check, Sparkles, ExternalLink, CheckCheck, Phone, FileText, Mail, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import sachinPhotoImg from '../assets/sachin_photo.jpg';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -31,9 +32,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
 
   if (!isOpen) return null;
 
-  // Sachin Mishra's Official Verified UPI Credentials
+  // Sachin Mishra's Official Verified UPI & Contact Credentials
   const upiId = "sm2157982-1@okhdfcbank";
-  const upiPhone = "7820802707";
+  const upiPhoneDisplay = "+91 8928450584";
+  const upiPhoneNumber = "8928450584";
+  const instructorEmail = "sachin19566@gmail.com";
   const payeeName = "Sachin Mishra";
 
   // Direct UPI Intent Link for mobile phones
@@ -59,7 +62,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
   };
 
   const handleCopyPhone = () => {
-    navigator.clipboard.writeText(upiPhone);
+    navigator.clipboard.writeText(upiPhoneNumber);
     setCopiedPhone(true);
     setTimeout(() => setCopiedPhone(false), 2000);
   };
@@ -140,7 +143,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
         currency: "INR",
         name: "Production RAG Cohort",
         description: `4-Week Live Masterclass by Sachin Mishra (Code: ${isPromoApplied ? 'EARLYBIRD10' : 'NONE'})`,
-        image: "./sachin_photo.jpg",
+        image: sachinPhotoImg,
         prefill: {
           name: name,
           email: email,
@@ -414,7 +417,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                       <div className="flex items-center justify-between text-slate-600">
                         <span>GPay/PhonePe Number:</span>
                         <div className="flex items-center gap-1">
-                          <span className="text-slate-800 font-bold">{upiPhone}</span>
+                          <span className="text-slate-800 font-bold">{upiPhoneDisplay}</span>
                           <button
                             onClick={handleCopyPhone}
                             type="button"
@@ -522,44 +525,77 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               Enrollment Confirmed! 🎉
             </h3>
 
-            {enrolledStudentId && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-mono">
-                <span>MongoDB Record ID:</span>
-                <strong className="text-teal-950 font-bold">{enrolledStudentId}</strong>
-              </div>
-            )}
-
-            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-              Welcome to Cohort 1 of <span className="text-teal-700 font-bold">Production RAG</span>, <span className="text-slate-900 font-bold">{name || "Engineer"}</span>! Your registration details have been saved. We have sent the calendar invites and syllabus to <span className="text-teal-700 font-mono">{email || "your email"}</span>.
-            </p>
-
-            {/* VIP Discord Access Box */}
-            <div className="rounded-2xl p-4 bg-slate-50 border border-slate-200 text-left space-y-2">
-              <div className="text-xs font-mono text-teal-700 font-bold uppercase tracking-wider">
-                Next Immediate Steps:
-              </div>
-              <ul className="text-xs text-slate-600 space-y-1.5 font-mono">
-                <li>1. Join the Private VIP Discord server for pre-work</li>
-                <li>2. Clone the starter repository with MiG-29 manual</li>
-                <li>3. Add live weekend class schedule to your Google Calendar</li>
-              </ul>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-mono">
+              <span>Invoice Reference:</span>
+              <strong className="text-teal-950 font-bold">
+                {enrolledStudentId ? `INV-PRAG-${enrolledStudentId.slice(-6).toUpperCase()}` : 'INV-PRAG-CONFIRMED'}
+              </strong>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <a
-                href="https://discord.gg"
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-3 rounded-xl bg-teal-600 text-white font-bold text-xs font-mono flex items-center justify-center gap-2 hover:bg-teal-700"
-              >
-                <span>Join Private Discord Server</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
+            <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+              Welcome to Cohort 1 of <span className="text-teal-700 font-bold">Production RAG</span>, <span className="text-slate-900 font-bold">{name || "Engineer"}</span>! Your official Tax Invoice and cohort enrollment confirmation have been dispatched to <span className="text-teal-700 font-mono font-semibold">{email || "your registered email"}</span>.
+            </p>
+
+            {/* Instant Tax Invoice Download Button */}
+            <a
+              href={`${(import.meta as any).env?.VITE_BACKEND_URL || 'https://production-rag-api-gwus.onrender.com'}/api/invoice/${enrolledStudentId || encodeURIComponent(email)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2.5 px-4 rounded-xl bg-teal-50 border border-teal-300 hover:bg-teal-100 text-teal-900 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-sm"
+            >
+              <FileText className="w-4 h-4 text-teal-700" />
+              <span>View &amp; Download Official Tax Invoice / Receipt (PDF)</span>
+              <ExternalLink className="w-3.5 h-3.5 text-teal-600" />
+            </a>
+
+            {/* VIP Discord Channel & Onboarding Status */}
+            <div className="rounded-2xl p-4 bg-slate-50 border border-slate-200 text-left space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-800 uppercase tracking-wider">
+                <span>VIP Discord Community &amp; Codebase</span>
+                <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
+                  Access Configured Prior to Kickoff
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed font-sans">
+                The private VIP Discord server and repo access are currently being configured by Sachin. Your exclusive Discord invitation link, private batch channel credentials, and the 77-page MiG-29 manual will be delivered directly to your registered WhatsApp (<strong>{phone || "your number"}</strong>) and email (<strong>{email || "your email"}</strong>) before the live orientation session.
+              </p>
+            </div>
+
+            {/* Direct Instructor Access (WhatsApp & Personal Email) */}
+            <div className="rounded-2xl p-3.5 bg-emerald-50/80 border border-emerald-200 text-left space-y-2">
+              <div className="text-xs font-mono font-bold text-emerald-900 flex items-center gap-1.5">
+                <MessageCircle className="w-4 h-4 text-emerald-700" />
+                <span>Instructor Direct Contact (Sachin Mishra)</span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                Have any pre-session questions or want immediate confirmation? Reach out directly:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 pt-1 font-mono text-xs">
+                <a
+                  href={`https://wa.me/91${upiPhoneNumber}?text=${encodeURIComponent(`Hi Sachin, I have just enrolled in Production RAG Cohort 1! My name is ${name}.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>WhatsApp: {upiPhoneDisplay}</span>
+                </a>
+                <a
+                  href={`mailto:${instructorEmail}?subject=${encodeURIComponent(`Enrolled in Production RAG Cohort 1 - ${name}`)}`}
+                  className="flex-1 py-2 px-3 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5 text-teal-600" />
+                  <span>{instructorEmail}</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="pt-2">
               <button
                 onClick={onClose}
-                className="w-full py-3 rounded-xl bg-slate-100 text-slate-700 font-mono text-xs hover:bg-slate-200"
+                className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-mono text-xs font-semibold transition-colors"
               >
-                Done / Return to Site
+                Done / Return to Masterclass Overview
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Award, Users, Star, CheckCircle, MessageSquare, Briefcase, Sparkles, Linkedin, Youtube, ExternalLink, Play, Video } from 'lucide-react';
+import sachinPhotoImg from '../assets/sachin_photo.jpg';
 
 export const Mentor: React.FC = () => {
   const studentReviews = [
@@ -79,14 +80,14 @@ export const Mentor: React.FC = () => {
               <div className="relative group">
                 <div className="w-56 h-64 sm:w-64 sm:h-72 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-md">
                   <img
-                    src="./sachin_photo.jpg"
+                    src={sachinPhotoImg}
                     alt="Sachin Mishra - Senior Generative AI Engineer"
                     className="w-full h-full object-cover object-top"
                     onError={(e) => {
-                      // Fallback to absolute or placeholder if needed
+                      // Multi-tier fallback: relative public -> GitHub CDN
                       const target = e.currentTarget;
-                      if (!target.src.endsWith('/sachin_photo.jpg')) {
-                        target.src = 'sachin_photo.jpg';
+                      if (!target.src.includes('raw.githubusercontent.com')) {
+                        target.src = 'https://raw.githubusercontent.com/SachinMishra-ux/production_rag_course/main/frontend/public/sachin_photo.jpg';
                       }
                     }}
                   />

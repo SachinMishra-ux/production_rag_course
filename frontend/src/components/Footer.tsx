@@ -30,8 +30,9 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
               <p className="text-slate-600 max-w-sm leading-relaxed text-xs">
                 A 3-4 week live intensive cohort on building, scaling, and deploying multimodal production RAG systems. Mentored by Sachin Mishra.
               </p>
-              <div className="text-[11px] font-mono text-teal-700">
-                Direct Contact: <a href="mailto:contact@productionrag.dev" className="underline hover:text-slate-900">contact@productionrag.dev</a>
+              <div className="text-[11px] font-mono text-teal-700 flex flex-col gap-1">
+                <div>Direct Contact: <a href="mailto:sachin19566@gmail.com" className="underline hover:text-slate-900 font-semibold">sachin19566@gmail.com</a></div>
+                <div>WhatsApp: <a href="https://wa.me/918928450584" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-900 font-semibold">+91 8928450584</a></div>
               </div>
 
               {/* Social Channels with Official Logos */}
