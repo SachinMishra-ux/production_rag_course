@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, ShieldCheck, QrCode, CreditCard, Smartphone, Copy, Check, Sparkles, ExternalLink, CheckCheck, Phone, FileText, Mail, MessageCircle } from 'lucide-react';
+import { X, CheckCircle, ShieldCheck, QrCode, CreditCard, Smartphone, Copy, Check, Sparkles, ExternalLink, CheckCheck, Phone, FileText, Mail, MessageCircle, MessageSquare } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import sachinPhotoImg from '../assets/sachin_photo.jpg';
 
@@ -548,17 +548,29 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               <ExternalLink className="w-3.5 h-3.5 text-teal-600" />
             </a>
 
-            {/* VIP Discord Channel & Onboarding Status */}
-            <div className="rounded-2xl p-4 bg-slate-50 border border-slate-200 text-left space-y-2">
-              <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-800 uppercase tracking-wider">
-                <span>VIP Discord Community &amp; Codebase</span>
-                <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
-                  Access Configured Prior to Kickoff
+            {/* VIP Discord Channel & Community Access */}
+            <div className="rounded-2xl p-4 bg-indigo-50/80 border border-indigo-200 text-left space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono font-bold text-indigo-900 uppercase tracking-wider">
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare className="w-4 h-4 text-indigo-600" />
+                  VIP Discord Community
+                </span>
+                <span className="text-[10px] bg-indigo-100 text-indigo-700 border border-indigo-300 px-2 py-0.5 rounded-full font-semibold">
+                  Official Invite Active
                 </span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed font-sans">
-                The private VIP Discord server and repo access are currently being configured by Sachin. Your exclusive Discord invitation link, private batch channel credentials, and the 77-page MiG-29 manual will be delivered directly to your registered WhatsApp (<strong>{phone || "your number"}</strong>) and email (<strong>{email || "your email"}</strong>) before the live orientation session.
+                Join the private Production RAG Discord server right now to connect with cohort peers, participate in technical discussions, and access repository materials:
               </p>
+              <a
+                href="https://discord.gg/fKXBsdr4H"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <span>Join Official VIP Discord Server</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
 
             {/* Direct Instructor Access (WhatsApp & Personal Email) */}

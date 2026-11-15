@@ -144,7 +144,8 @@ def register_student(payload: StudentRegistration, background_tasks: BackgroundT
                 "email": INSTRUCTOR_EMAIL,
                 "whatsapp": INSTRUCTOR_PHONE
             },
-            "discord_note": "VIP Discord invite will be sent to your WhatsApp and email prior to orientation."
+            "discord_invite": "https://discord.gg/fKXBsdr4H",
+            "discord_note": "Join the official Production RAG VIP Discord: https://discord.gg/fKXBsdr4H"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -299,7 +300,8 @@ def verify_payment(payload: PaymentVerificationRequest, background_tasks: Backgr
                 "email": INSTRUCTOR_EMAIL,
                 "whatsapp": INSTRUCTOR_PHONE
             },
-            "discord_note": "VIP Discord invite will be sent to your WhatsApp and email prior to orientation."
+            "discord_invite": "https://discord.gg/fKXBsdr4H",
+            "discord_note": "Join the official Production RAG VIP Discord: https://discord.gg/fKXBsdr4H"
         }
     except razorpay.errors.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Signature verification failed. Invalid payment.")

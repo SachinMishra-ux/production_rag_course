@@ -95,7 +95,17 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
                   <Shield className="w-3.5 h-3.5" /> 7-Day Money-Back Guarantee
                 </li>
                 <li>Secure 256-Bit SSL Checkout</li>
-                <li>Direct Code Reviews & Discord VIP</li>
+                <li>
+                  <a
+                    href="https://discord.gg/fKXBsdr4H"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-indigo-600 font-semibold text-slate-700 flex items-center gap-1 transition-colors"
+                  >
+                    <span>Direct Code Reviews &amp; Discord VIP</span>
+                    <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                  </a>
+                </li>
                 <li>Privacy Policy & Code of Conduct</li>
               </ul>
             </div>

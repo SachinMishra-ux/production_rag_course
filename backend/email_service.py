@@ -29,6 +29,8 @@ if not raw_phone or "7820802707" in raw_phone:
 else:
     INSTRUCTOR_PHONE = raw_phone
 
+DISCORD_INVITE_URL = os.getenv("DISCORD_INVITE_URL", "https://discord.gg/fKXBsdr4H")
+
 def generate_invoice_html(student: Dict[str, Any]) -> str:
     invoice_num = f"INV-PRAG-{str(student.get('id', student.get('_id', '000000')))[-6:].upper()}"
     date_str = datetime.now().strftime("%B %d, %Y")
@@ -143,10 +145,10 @@ def generate_invoice_html(student: Dict[str, Any]) -> str:
     </div>
 
     <div class="notes-box">
-      <h5>Next Steps & Cohort Onboarding</h5>
+      <h5>Next Steps &amp; Cohort Onboarding</h5>
       <p style="margin: 4px 0;">1. <strong>Direct Instructor Access:</strong> You can contact Sachin Mishra directly on WhatsApp at <strong>{INSTRUCTOR_PHONE}</strong> or email at <strong>{INSTRUCTOR_EMAIL}</strong> for any queries.</p>
-      <p style="margin: 4px 0;">2. <strong>VIP Discord Community:</strong> The private VIP Discord community link is being configured and will be dispatched directly to your registered email & WhatsApp before the live orientation session.</p>
-      <p style="margin: 4px 0;">3. <strong>Starter Codebase & Schematics:</strong> Complete repository access and the 77-page MiG-29 manual will be delivered via email.</p>
+      <p style="margin: 4px 0;">2. <strong>VIP Discord Community:</strong> Join our private cohort Discord server right away for live announcements, pre-reading, and office hours: <a href="{DISCORD_INVITE_URL}" style="color:#5865F2; font-weight:700;" target="_blank">{DISCORD_INVITE_URL}</a></p>
+      <p style="margin: 4px 0;">3. <strong>Starter Codebase &amp; Schematics:</strong> Complete repository access and the 77-page MiG-29 manual will be delivered via email and pinned in the Discord #announcements channel.</p>
     </div>
 
     <div class="contact-bar">
@@ -186,7 +188,10 @@ DIRECT INSTRUCTOR CONTACT:
 - Email: {INSTRUCTOR_EMAIL}
 
 COMMUNITY ONBOARDING:
-The private VIP Discord community link is being configured and will be sent to your WhatsApp and email prior to the first weekend orientation session.
+Join the official Production RAG VIP Discord Server right away:
+{DISCORD_INVITE_URL}
+
+You can introduce yourself in #introductions, network with cohort peers, and access pinned pre-reading materials prior to session #1.
 
 If you have any questions, feel free to reply directly to this email or reach out on WhatsApp.
 
