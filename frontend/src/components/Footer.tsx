@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Shield, ArrowUp, Zap, Linkedin, Youtube, ExternalLink } from 'lucide-react';
+import { Terminal, Shield, ArrowUp, Zap, Linkedin, Youtube, ExternalLink, Calendar } from 'lucide-react';
 
 interface FooterProps {
   onOpenPayment: () => void;
@@ -112,6 +112,36 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
 
           </div>
 
+          {/* Cohort December Schedule Announcement Banner */}
+          <div className="mb-10 p-4 sm:p-5 rounded-2xl bg-teal-50/90 border border-teal-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono text-xs shadow-sm">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5 sm:mt-0">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-900 text-sm">
+                    Cohort #1 Starts in December Month
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold uppercase tracking-wider">
+                    Upcoming Cohort
+                  </span>
+                </div>
+                <p className="text-slate-600 text-xs font-sans leading-relaxed">
+                  We are kicking off Cohort #1 in the month of <strong>December</strong>. The exact calendar dates, live weekend schedules, and onboarding orientation will be communicated further once you enroll in the cohort.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenPayment}
+              className="shrink-0 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition-colors shadow-sm text-center flex items-center justify-center gap-1.5"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white text-white" />
+              <span>Enroll &amp; Reserve Seat</span>
+            </button>
+          </div>
+
           <div className="border-t border-slate-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px]">
             <div>
               © 2025-2026 Production RAG Masterclass by Sachin Mishra. All rights reserved.
@@ -137,8 +167,8 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-600"></span>
             </span>
             <div className="text-xs font-mono">
-              <span className="text-slate-900 font-semibold">Cohort #1 Live Classes</span>
-              <span className="text-slate-500 ml-2">Weekend Sessions • Use Code <strong className="text-teal-700">EARLYBIRD10</strong> for 10% Off</span>
+              <span className="text-slate-900 font-semibold">Cohort #1 Starting in December</span>
+              <span className="text-slate-500 ml-2">Weekend Sessions • Exact dates communicated upon enrollment</span>
             </div>
           </div>
 
