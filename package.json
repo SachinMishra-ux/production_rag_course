@@ -1,0 +1,9 @@
+{
+  "name": "production-rag-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd .. && rm -rf dist && cp -r frontend/dist dist",
+    "install": "cd frontend && npm install"
+  }
+}
