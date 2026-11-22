@@ -35,8 +35,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
   const amountINR = baseAmountINR - discountAmount;
   const amountUSD = 99;
 
-  if (!isOpen) return null;
-
   // Sachin Mishra's Official Verified UPI & Contact Credentials
   const upiId = "sm2157982-1@okhdfcbank";
   const upiPhoneDisplay = "+91 8928450584";
@@ -274,7 +272,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
 
   // Real-time auto-polling: Polls approval status every 6 seconds when student is waiting
   React.useEffect(() => {
-    if (!paymentSuccess || enrollmentStatus !== 'pending_verification') return;
+    if (!isOpen || !paymentSuccess || enrollmentStatus !== 'pending_verification') return;
     
     const intervalId = setInterval(async () => {
       const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'https://production-rag-api-gwus.onrender.com';
@@ -295,7 +293,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     }, 6000);
 
     return () => clearInterval(intervalId);
-  }, [paymentSuccess, enrollmentStatus, enrolledStudentId, email]);
+  }, [isOpen, paymentSuccess, enrollmentStatus, enrolledStudentId, email]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
