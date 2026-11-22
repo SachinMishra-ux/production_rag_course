@@ -15,6 +15,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [utrNumber, setUtrNumber] = useState('');
+  const [upiStep, setUpiStep] = useState<'qr' | 'ref'>('qr');
   const [hasPaidConfirmed, setHasPaidConfirmed] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
   const [enrollmentStatus, setEnrollmentStatus] = useState<'pending_verification' | 'confirmed' | ''>('');
@@ -429,133 +430,167 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             {/* Tab 1: Direct UPI QR Code (Manual Payment with Bank Verification) */}
             {activeTab === 'upi_qr' && (
               <div className="space-y-4">
-                <div className="flex flex-col items-center p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                  <div className="w-44 h-44 rounded-xl overflow-hidden bg-white p-2 border border-slate-200 shadow-sm">
-                    <img
-                      src={qrCodeUrl}
-                      alt="Sachin Mishra UPI QR Code"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div className="text-center mt-3 w-full">
-                    <div className="text-xs font-mono text-slate-700 font-semibold">
-                      Step 1: Scan with GPay, PhonePe, or Paytm (₹{amountINR.toLocaleString('en-IN')})
-                    </div>
-                    
-                    {/* Payee Details */}
-                    <div className="mt-2.5 space-y-1.5 bg-white p-2.5 rounded-xl border border-slate-200 text-left text-xs font-mono">
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span>Payee:</span>
-                        <span className="font-bold text-slate-800">{payeeName}</span>
+                {upiStep === 'qr' ? (
+                  /* STAGE 1: ONLY QR CODE & SCAN INSTRUCTIONS (NO REFERENCE INPUT SHOWN) */
+                  <div className="space-y-4">
+                    <div className="flex flex-col items-center p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                      <div className="w-44 h-44 rounded-xl overflow-hidden bg-white p-2 border border-slate-200 shadow-sm">
+                        <img
+                          src={qrCodeUrl}
+                          alt="Sachin Mishra UPI QR Code"
+                          className="w-full h-full object-contain"
+                        />
                       </div>
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span>UPI ID:</span>
-                        <div className="flex items-center gap-1">
-                          <span className="text-teal-700 font-bold text-[11px]">{upiId}</span>
-                          <button
-                            onClick={handleCopyUpi}
-                            type="button"
-                            className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600"
-                            title="Copy UPI ID"
-                          >
-                            {copiedUpi ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                          </button>
+                      <div className="text-center mt-3 w-full">
+                        <div className="text-xs font-mono text-slate-800 font-bold">
+                          Step 1: Scan &amp; Pay ₹{amountINR.toLocaleString('en-IN')} with any UPI App
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                          Google Pay • PhonePe • Paytm • BHIM • Cred
+                        </div>
+                        
+                        {/* Payee Details */}
+                        <div className="mt-2.5 space-y-1.5 bg-white p-2.5 rounded-xl border border-slate-200 text-left text-xs font-mono">
+                          <div className="flex items-center justify-between text-slate-600">
+                            <span>Payee:</span>
+                            <span className="font-bold text-slate-800">{payeeName}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-slate-600">
+                            <span>UPI ID:</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-teal-700 font-bold text-[11px]">{upiId}</span>
+                              <button
+                                onClick={handleCopyUpi}
+                                type="button"
+                                className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600"
+                                title="Copy UPI ID"
+                              >
+                                {copiedUpi ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-slate-600">
+                            <span>GPay/PhonePe Number:</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-slate-800 font-bold">{upiPhoneDisplay}</span>
+                              <button
+                                onClick={handleCopyPhone}
+                                type="button"
+                                className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600"
+                                title="Copy Phone Number"
+                              >
+                                {copiedPhone ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span>GPay/PhonePe Number:</span>
-                        <div className="flex items-center gap-1">
-                          <span className="text-slate-800 font-bold">{upiPhoneDisplay}</span>
-                          <button
-                            onClick={handleCopyPhone}
-                            type="button"
-                            className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600"
-                            title="Copy Phone Number"
-                          >
-                            {copiedPhone ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                          </button>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Direct Mobile Intent Link */}
-                <a
-                  href={upiIntentUrl}
-                  className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-center font-mono text-xs text-white block transition-colors shadow-sm sm:hidden font-semibold"
-                >
-                  Open in UPI App (Pay ₹{amountINR.toLocaleString('en-IN')})
-                </a>
+                    {/* Direct Mobile Intent Link */}
+                    <a
+                      href={upiIntentUrl}
+                      className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-center font-mono text-xs text-white block transition-colors shadow-sm sm:hidden font-semibold"
+                    >
+                      Open in UPI App (Pay ₹{amountINR.toLocaleString('en-IN')})
+                    </a>
 
-                {/* Step 2: Verification Form with Strict Checklist */}
-                <form onSubmit={handleUpiVerification} className="space-y-3.5 bg-slate-50/90 p-4 rounded-2xl border border-slate-200">
-                  <div className="text-xs font-mono text-slate-700 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Step 2: Bank Statement Verification</span>
-                  </div>
+                    {/* Button to proceed to Step 2 ONLY after payment is done */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!name.trim() || !email.trim() || !phone.trim()) {
+                          setSubmissionError("Please fill in your Name, Email, and WhatsApp Phone number above first.");
+                          return;
+                        }
+                        setSubmissionError('');
+                        setUpiStep('ref');
+                      }}
+                      className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-mono text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span>I Have Done the Payment → Enter Reference ID</span>
+                    </button>
 
-                  {/* Payment Completed Confirmation Checkbox */}
-                  <label className="flex items-start gap-2.5 cursor-pointer bg-white p-3 rounded-xl border border-slate-300 hover:border-teal-500 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={hasPaidConfirmed}
-                      onChange={(e) => setHasPaidConfirmed(e.target.checked)}
-                      className="mt-0.5 rounded text-teal-600 focus:ring-teal-500 w-4 h-4"
-                    />
-                    <span className="text-xs text-slate-700 font-mono leading-tight">
-                      I have completed the transfer of <strong>₹{amountINR.toLocaleString('en-IN')}</strong> via UPI and have my 12-digit UTR receipt number.
-                    </span>
-                  </label>
-
-                  {/* 12-Digit Numeric UTR Input */}
-                  <div>
-                    <div className="flex justify-between items-center text-[11px] font-mono text-slate-600 mb-1">
-                      <span>Enter 12-digit UPI Reference / UTR Number:</span>
-                      <span className={`font-bold ${utrNumber.length === 12 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                        {utrNumber.length}/12 digits
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]{12}"
-                      maxLength={12}
-                      disabled={!hasPaidConfirmed}
-                      placeholder="e.g. 431289012345 (from GPay / PhonePe receipt)"
-                      value={utrNumber}
-                      onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                      className={`w-full px-3 py-2.5 text-xs rounded-xl border font-mono transition-colors ${
-                        !hasPaidConfirmed
-                          ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                          : utrNumber.length === 12
-                          ? 'bg-white border-emerald-500 text-slate-900 focus:border-emerald-600'
-                          : 'bg-white border-slate-300 text-slate-900 focus:border-teal-600'
-                      }`}
-                      required
-                    />
-                    <p className="text-[10px] text-slate-500 font-mono mt-1 leading-normal">
-                      Where to find it: Open transaction in Google Pay / PhonePe / Paytm → copy 12-digit "UPI Ref No" or "UTR". Duplicate or fake UTRs are automatically rejected.
+                    <p className="text-[11px] text-slate-500 font-mono text-center">
+                      Payment must be completed first. Once paid, click the button above to enter your 12-digit reference number.
                     </p>
                   </div>
+                ) : (
+                  /* STAGE 2: ONLY DISPLAYED AFTER PAYMENT IS DONE */
+                  <div className="space-y-4">
+                    {/* Back to QR Code Link */}
+                    <button
+                      type="button"
+                      onClick={() => { setUpiStep('qr'); setSubmissionError(''); }}
+                      className="text-xs font-mono text-teal-700 hover:text-teal-800 flex items-center gap-1 font-semibold"
+                    >
+                      <span>← Back to QR Code</span>
+                    </button>
 
-                  <button
-                    type="submit"
-                    disabled={isProcessing || !hasPaidConfirmed || utrNumber.length !== 12}
-                    className={`w-full py-3 rounded-xl font-bold text-xs font-mono shadow-sm transition-all flex items-center justify-center gap-2 ${
-                      !hasPaidConfirmed || utrNumber.length !== 12
-                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
-                    }`}
-                  >
-                    {isProcessing ? "Submitting for Verification..." : "Submit UTR for Bank Verification"}
-                  </button>
+                    <form onSubmit={handleUpiVerification} className="space-y-3.5 bg-slate-50/90 p-4 rounded-2xl border border-slate-200">
+                      <div className="text-xs font-mono text-slate-700 font-bold uppercase tracking-wider flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+                          <span>Step 2: Enter UPI Reference ID</span>
+                        </span>
+                        <span className="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full font-bold">
+                          ₹{amountINR.toLocaleString('en-IN')} Paid
+                        </span>
+                      </div>
 
-                  <div className="text-[10px] text-slate-500 font-mono text-center flex items-center justify-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-teal-600" />
-                    <span>Cross-checked against HDFC Bank statement before access is unlocked.</span>
+                      <div className="p-3 rounded-xl bg-teal-50/70 border border-teal-200 text-xs font-mono text-teal-900 leading-relaxed">
+                        Payment completed? Enter the <strong>12-digit UPI Reference / UTR Number</strong> from your GPay, PhonePe, or Paytm receipt to verify your enrollment.
+                      </div>
+
+                      {/* 12-Digit Numeric UTR Input */}
+                      <div>
+                        <div className="flex justify-between items-center text-[11px] font-mono text-slate-600 mb-1">
+                          <span>12-digit UPI Reference / UTR Number:</span>
+                          <span className={`font-bold ${utrNumber.length === 12 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            {utrNumber.length}/12 digits
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]{12}"
+                          maxLength={12}
+                          placeholder="e.g. 431289012345 (from UPI receipt)"
+                          value={utrNumber}
+                          onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                          className={`w-full px-3 py-2.5 text-xs rounded-xl border font-mono transition-colors ${
+                            utrNumber.length === 12
+                              ? 'bg-white border-emerald-500 text-slate-900 focus:border-emerald-600 ring-2 ring-emerald-100'
+                              : 'bg-white border-slate-300 text-slate-900 focus:border-teal-600'
+                          }`}
+                          required
+                          autoFocus
+                        />
+                        <p className="text-[10px] text-slate-500 font-mono mt-1.5 leading-normal">
+                          Where to find it: Open your payment in Google Pay / PhonePe / Paytm → tap transaction details → copy 12-digit "UPI Ref No" or "UTR". Duplicate or fake UTRs are rejected.
+                        </p>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isProcessing || utrNumber.length !== 12}
+                        className={`w-full py-3 rounded-xl font-bold text-xs font-mono shadow-sm transition-all flex items-center justify-center gap-2 ${
+                          utrNumber.length !== 12
+                            ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
+                        }`}
+                      >
+                        {isProcessing ? "Verifying Reference..." : "Confirm Payment Reference & Activate"}
+                      </button>
+
+                      <div className="text-[10px] text-slate-500 font-mono text-center flex items-center justify-center gap-1">
+                        <ShieldCheck className="w-3 h-3 text-teal-600" />
+                        <span>Reference is cross-checked against HDFC Bank account statement.</span>
+                      </div>
+                    </form>
                   </div>
-                </form>
+                )}
               </div>
             )}
 
