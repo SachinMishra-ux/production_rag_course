@@ -23,6 +23,9 @@ if not raw_phone or "7820802707" in raw_phone:
 else:
     INSTRUCTOR_PHONE = raw_phone
 
+ADMIN_SECRET = os.getenv("ADMIN_SECRET", "sachin_rag_admin_2026")
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "https://production-rag-api-gwus.onrender.com")
+
 client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 app = FastAPI(
@@ -50,7 +53,7 @@ class StudentRegistration(BaseModel):
     utr_number: Optional[str] = None
     razorpay_order_id: Optional[str] = None
     razorpay_payment_id: Optional[str] = None
-    status: str = "confirmed"
+    status: str = "pending_verification"
     notes: Optional[str] = None
     currency: str = "INR"
 
@@ -73,6 +76,7 @@ class PaymentVerificationRequest(BaseModel):
     promo_code: Optional[str] = "EARLYBIRD10"
 
 @app.get("/")
+@app.get("/health")
 def health_check():
     students = database.get_all_students()
     db_name = "MongoDB Atlas (Atlas Cloud Cluster)" if database.is_mongo_active else "SQLite (data/students.db)"
@@ -94,59 +98,119 @@ def health_check():
 @app.post("/api/register-student")
 def register_student(payload: StudentRegistration, background_tasks: BackgroundTasks):
     """
-    Stores incoming student enrollment & payment records in the persistent database.
-    Used for UPI QR payments, Razorpay completions, and Stripe checkouts.
-    Dispatches automated confirmation email and tax invoice in the background.
+    Stores incoming student enrollment & payment records with strict fraud protection:
+    1. Validates exact 12-digit format for UPI UTR references.
+    2. Enforces duplicate UTR check to block fake or replayed transactions.
+    3. Manual UPI payments are set to 'pending_verification' (NO instant Discord access until verified).
+    4. Automatically alerts Sachin Mishra via email with a 1-click bank approval link.
     """
     try:
+        clean_name = payload.name.strip()
+        clean_email = payload.email.strip().lower()
+        clean_phone = payload.phone.strip()
+        clean_method = payload.payment_method.strip().lower()
+        clean_utr = (payload.utr_number or "").strip()
+
+        # Enforce validation for direct UPI payments
+        if clean_method == "upi_qr":
+            if not clean_utr or len(clean_utr) != 12 or not clean_utr.isdigit():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid UPI Reference (UTR) Number. It must be exactly 12 numeric digits from your payment receipt (e.g. 431289012345)."
+                )
+            
+            # Anti-Fraud: Check for duplicate UTR in the database
+            duplicate_student = database.find_student_by_utr(clean_utr)
+            if duplicate_student:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"This UPI Reference / UTR number ({clean_utr}) has already been submitted for enrollment. Duplicate submissions are strictly blocked. If you need assistance, contact Sachin Mishra on WhatsApp."
+                )
+
+            # Strict policy: Direct UPI transfers CANNOT be auto-confirmed without bank check
+            enforced_status = "pending_verification"
+        elif clean_method == "razorpay" and payload.razorpay_payment_id:
+            enforced_status = "confirmed"
+        else:
+            enforced_status = "pending_verification"
+
         record_id = database.save_student(
-            name=payload.name,
-            email=payload.email,
-            phone=payload.phone,
+            name=clean_name,
+            email=clean_email,
+            phone=clean_phone,
             amount_inr=payload.amount_inr,
-            payment_method=payload.payment_method,
+            payment_method=clean_method,
             promo_code=payload.promo_code,
-            utr_number=payload.utr_number,
+            utr_number=clean_utr or None,
             razorpay_order_id=payload.razorpay_order_id,
             razorpay_payment_id=payload.razorpay_payment_id,
-            status=payload.status,
-            notes=payload.notes,
+            status=enforced_status,
+            notes=payload.notes or f"Registered via {clean_method}",
             currency=payload.currency
         )
 
         student_dict = {
             "id": record_id,
-            "name": payload.name,
-            "email": payload.email,
-            "phone": payload.phone,
+            "name": clean_name,
+            "email": clean_email,
+            "phone": clean_phone,
             "amount_inr": payload.amount_inr,
-            "payment_method": payload.payment_method,
+            "payment_method": clean_method,
             "promo_code": payload.promo_code or "EARLYBIRD10",
-            "utr_number": payload.utr_number or "VERIFIED",
-            "status": payload.status,
+            "utr_number": clean_utr or "PENDING_VERIFICATION",
+            "status": enforced_status,
             "currency": payload.currency
         }
 
-        # Dispatch automated tax invoice & confirmation email via background task
+        # 1. Dispatch student receipt email (Pending receipt if pending, Paid Invoice if confirmed)
         background_tasks.add_task(email_service.send_enrollment_email, student_dict)
 
-        return {
-            "success": True,
-            "message": "Student registration saved successfully and invoice queued.",
-            "student_id": record_id,
-            "invoice_url": f"/api/invoice/{record_id}",
-            "name": payload.name,
-            "email": payload.email,
-            "payment_method": payload.payment_method,
-            "status": payload.status,
-            "instructor_contact": {
-                "name": "Sachin Mishra",
-                "email": INSTRUCTOR_EMAIL,
-                "whatsapp": INSTRUCTOR_PHONE
-            },
-            "discord_invite": "https://discord.gg/fKXBsdr4H",
-            "discord_note": "Join the official Production RAG VIP Discord: https://discord.gg/fKXBsdr4H"
-        }
+        # 2. If pending verification, alert instructor Sachin Mishra with 1-click approval URL
+        if enforced_status == "pending_verification":
+            approve_url = f"{BACKEND_BASE_URL}/api/admin/approve-student/{record_id}?token={ADMIN_SECRET}"
+            background_tasks.add_task(email_service.send_instructor_pending_alert, student_dict, approve_url)
+
+            return {
+                "success": True,
+                "status": "pending_verification",
+                "message": "Payment reference submitted successfully for verification. We are cross-checking against HDFC Bank account statement.",
+                "id": record_id,
+                "id": record_id,
+                "student_id": record_id,
+                "utr_number": clean_utr,
+                "invoice_url": f"/api/invoice/{record_id}",
+                "name": clean_name,
+                "email": clean_email,
+                "payment_method": clean_method,
+                "instructor_contact": {
+                    "name": "Sachin Mishra",
+                    "email": INSTRUCTOR_EMAIL,
+                    "whatsapp": INSTRUCTOR_PHONE
+                },
+                "discord_invite": None,
+                "discord_note": "VIP Discord invite will be unlocked and dispatched as soon as the bank statement verification is approved."
+            }
+        else:
+            return {
+                "success": True,
+                "status": "confirmed",
+                "message": "Student registration confirmed and payment verified.",
+                "id": record_id,
+                "student_id": record_id,
+                "invoice_url": f"/api/invoice/{record_id}",
+                "name": clean_name,
+                "email": clean_email,
+                "payment_method": clean_method,
+                "instructor_contact": {
+                    "name": "Sachin Mishra",
+                    "email": INSTRUCTOR_EMAIL,
+                    "whatsapp": INSTRUCTOR_PHONE
+                },
+                "discord_invite": "https://discord.gg/fKXBsdr4H",
+                "discord_note": "Join the official Production RAG VIP Discord: https://discord.gg/fKXBsdr4H"
+            }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
@@ -366,6 +430,129 @@ def test_email(to: Optional[str] = "sachin19566@gmail.com"):
             "instructor_phone": INSTRUCTOR_PHONE
         }
     }
+
+@app.get("/api/student-status")
+def get_student_status(student_id: Optional[str] = None, email: Optional[str] = None):
+    """
+    Allows a student or frontend to poll/check their enrollment verification status.
+    If confirmed, returns the official VIP Discord community link.
+    """
+    identifier = student_id or email
+    if not identifier:
+        raise HTTPException(status_code=400, detail="Provide student_id or email.")
+    student = database.get_student_by_id(identifier)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student record not found.")
+
+    is_confirmed = student.get("status") in ["confirmed", "paid"]
+    return {
+        "student_id": student.get("id"),
+        "name": student.get("name"),
+        "email": student.get("email"),
+        "status": student.get("status"),
+        "utr_number": student.get("utr_number"),
+        "is_verified": is_confirmed,
+        "invoice_url": f"/api/invoice/{student.get('id')}",
+        "discord_invite": "https://discord.gg/fKXBsdr4H" if is_confirmed else None,
+        "message": "Payment verified! You can now join the VIP Discord server." if is_confirmed else "Payment reference is still under manual review against HDFC Bank statements."
+    }
+
+@app.get("/api/admin/pending-students")
+def get_pending_students_admin(token: str):
+    """
+    Admin portal endpoint for instructor Sachin Mishra to review all unverified UPI transfers.
+    """
+    if token != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Unauthorized: Invalid admin token.")
+    pending = database.get_pending_students()
+    return {
+        "pending_count": len(pending),
+        "students": [
+            {
+                **s,
+                "approve_url": f"{BACKEND_BASE_URL}/api/admin/approve-student/{s.get('id')}?token={ADMIN_SECRET}",
+                "reject_url": f"{BACKEND_BASE_URL}/api/admin/reject-student/{s.get('id')}?token={ADMIN_SECRET}"
+            }
+            for s in pending
+        ]
+    }
+
+@app.get("/api/admin/approve-student/{student_id}", response_class=HTMLResponse)
+def approve_student_admin(student_id: str, token: str, background_tasks: BackgroundTasks):
+    """
+    1-Click verification link: marks student as 'confirmed', generates the official Paid Invoice,
+    and automatically dispatches the VIP Discord community invite link to the student.
+    """
+    if token != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Unauthorized: Invalid admin token.")
+    
+    student = database.get_student_by_id(student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found.")
+    
+    # Update status to confirmed
+    database.update_student_status(student_id, "confirmed", notes="Verified and approved by Sachin Mishra")
+    
+    # Refresh student object with updated status
+    updated_student = {
+        **student,
+        "status": "confirmed"
+    }
+
+    # Dispatch official confirmed invoice & VIP Discord invite email
+    background_tasks.add_task(email_service.send_enrollment_email, updated_student)
+
+    return HTMLResponse(content=f"""<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Approved - Production RAG</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#f8fafc; padding:40px; color:#1e293b; text-align:center; }}
+    .card {{ max-width:500px; margin:0 auto; background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:36px; box-shadow:0 4px 6px rgba(0,0,0,0.05); }}
+    .badge {{ background:#ccfbf1; color:#0f766e; font-weight:700; padding:4px 12px; border-radius:999px; font-size:12px; display:inline-block; margin-bottom:12px; }}
+    h2 {{ color:#0f172a; margin:0 0 8px 0; }}
+    p {{ color:#64748b; font-size:14px; line-height:1.6; }}
+    .btn {{ display:inline-block; background:#0d9488; color:#fff; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:600; font-size:13px; margin-top:16px; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">ENROLLMENT APPROVED ✓</div>
+    <h2>{updated_student.get('name')} is Verified!</h2>
+    <p>
+      The payment reference (UTR: <strong>{updated_student.get('utr_number')}</strong>) has been confirmed in the database.
+    </p>
+    <p>
+      An official <strong>Paid Tax Invoice</strong> and the <strong>VIP Discord Invitation Link (https://discord.gg/fKXBsdr4H)</strong> have been automatically dispatched to <strong>{updated_student.get('email')}</strong>.
+    </p>
+    <a href="/api/invoice/{student_id}" target="_blank" class="btn">View Official Paid Invoice</a>
+  </div>
+</body>
+</html>""", status_code=200)
+
+@app.get("/api/admin/reject-student/{student_id}", response_class=HTMLResponse)
+def reject_student_admin(student_id: str, token: str):
+    """
+    Marks a fraudulent or unverified student payment submission as rejected.
+    """
+    if token != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Unauthorized: Invalid admin token.")
+    
+    student = database.get_student_by_id(student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found.")
+    
+    database.update_student_status(student_id, "rejected", notes="Rejected: UTR not found in bank statement")
+
+    return HTMLResponse(content=f"""<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif; text-align:center; padding:40px; background:#f8fafc;">
+  <div style="max-width:480px; margin:0 auto; background:#fff; border:1px solid #fee2e2; border-radius:16px; padding:32px;">
+    <h2 style="color:#b91c1c;">Submission Flagged as Rejected ✕</h2>
+    <p style="color:#64748b; font-size:14px;">The registration for <strong>{student.get('name')}</strong> (UTR: {student.get('utr_number')}) has been marked as rejected.</p>
+  </div>
+</body>
+</html>""", status_code=200)
 
 if __name__ == "__main__":
     import uvicorn

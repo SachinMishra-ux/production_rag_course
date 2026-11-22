@@ -218,6 +218,89 @@ def get_student_by_id(student_id_or_email: str) -> Optional[Dict[str, Any]]:
         conn.close()
         return dict(row) if row else None
 
+def find_student_by_utr(utr_number: str) -> Optional[Dict[str, Any]]:
+    """
+    Checks if a given 12-digit UTR number has already been registered in the database.
+    Prevents duplicate or replayed transaction references.
+    """
+    if not utr_number:
+        return None
+    cleaned = utr_number.strip()
+    if is_mongo_active and mongo_collection is not None:
+        doc = mongo_collection.find_one({"utr_number": cleaned})
+        if doc:
+            doc["id"] = str(doc.get("_id", ""))
+            if "_id" in doc:
+                del doc["_id"]
+            return doc
+        return None
+    else:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM students WHERE utr_number = ? LIMIT 1", (cleaned,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+def update_student_status(student_id_or_email: str, new_status: str, notes: Optional[str] = None) -> bool:
+    """
+    Updates the payment and enrollment status of a student (e.g. from 'pending_verification' to 'confirmed' or 'rejected').
+    """
+    if not student_id_or_email:
+        return False
+    cleaned = str(student_id_or_email).strip()
+    if is_mongo_active and mongo_collection is not None:
+        try:
+            from bson.objectid import ObjectId
+            if len(cleaned) == 24:
+                res = mongo_collection.update_one(
+                    {"_id": ObjectId(cleaned)},
+                    {"$set": {"status": new_status, "notes": notes or f"Updated to {new_status}"}}
+                )
+                if res.modified_count > 0:
+                    return True
+        except Exception:
+            pass
+        res = mongo_collection.update_one(
+            {"$or": [{"email": cleaned.lower()}, {"id": cleaned}]},
+            {"$set": {"status": new_status, "notes": notes or f"Updated to {new_status}"}}
+        )
+        return res.modified_count > 0
+    else:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        if cleaned.isdigit():
+            cursor.execute("UPDATE students SET status = ?, notes = ? WHERE id = ? OR email = ?",
+                           (new_status, notes or f"Updated to {new_status}", int(cleaned), cleaned.lower()))
+        else:
+            cursor.execute("UPDATE students SET status = ?, notes = ? WHERE email = ?",
+                           (new_status, notes or f"Updated to {new_status}", cleaned.lower()))
+        conn.commit()
+        updated = cursor.rowcount > 0
+        conn.close()
+        return updated
+
+def get_pending_students() -> List[Dict[str, Any]]:
+    """
+    Returns all students whose payments are pending verification by the instructor.
+    """
+    if is_mongo_active and mongo_collection is not None:
+        cursor = mongo_collection.find({"status": "pending_verification"}).sort("created_at", -1)
+        records = []
+        for doc in cursor:
+            doc["id"] = str(doc.get("_id", ""))
+            if "_id" in doc:
+                del doc["_id"]
+            records.append(doc)
+        return records
+    else:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM students WHERE status = 'pending_verification' ORDER BY id DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+
 def export_students_to_csv() -> str:
     """
     Exports all student records to a clean CSV spreadsheet string.

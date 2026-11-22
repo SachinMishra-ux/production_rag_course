@@ -40,8 +40,37 @@ def generate_invoice_html(student: Dict[str, Any]) -> str:
     student_phone = student.get("phone", "N/A")
     amount = student.get("amount_inr", 8099)
     payment_method = student.get("payment_method", "upi_qr").upper()
-    utr_number = student.get("utr_number", "VERIFIED")
+    utr_number = student.get("utr_number", "PENDING_VERIFICATION")
     promo_code = student.get("promo_code", "EARLYBIRD10")
+    status = student.get("status", "pending_verification")
+    
+    is_confirmed = status in ["confirmed", "paid"]
+    
+    if is_confirmed:
+        badge_title = "OFFICIAL TAX INVOICE & RECEIPT"
+        badge_style = "background: #ccfbf1; color: #0f766e;"
+        status_html = '<span style="color:#059669; font-weight:700;">PAID &amp; VERIFIED</span>'
+        notes_html = f"""
+        <div class="notes-box">
+          <h5>Next Steps &amp; Cohort Onboarding</h5>
+          <p style="margin: 4px 0;">1. <strong>Direct Instructor Access:</strong> You can contact Sachin Mishra directly on WhatsApp at <strong>{INSTRUCTOR_PHONE}</strong> or email at <strong>{INSTRUCTOR_EMAIL}</strong> for any queries.</p>
+          <p style="margin: 4px 0;">2. <strong>VIP Discord Community:</strong> Join our private cohort Discord server right away for live announcements, pre-reading, and office hours: <a href="{DISCORD_INVITE_URL}" style="color:#5865F2; font-weight:700;" target="_blank">{DISCORD_INVITE_URL}</a></p>
+          <p style="margin: 4px 0;">3. <strong>Starter Codebase &amp; Schematics:</strong> Complete repository access and the 77-page MiG-29 manual are delivered via email and pinned in the Discord #announcements channel.</p>
+        </div>
+        """
+    else:
+        badge_title = "PAYMENT ACKNOWLEDGMENT & PENDING VERIFICATION"
+        badge_style = "background: #fef3c7; color: #92400e; border: 1px solid #fde68a;"
+        status_html = '<span style="color:#d97706; font-weight:700;">PENDING BANK VERIFICATION</span>'
+        notes_html = f"""
+        <div class="notes-box" style="background:#fffbeb; border:1px solid #fde68a; color:#78350f;">
+          <h5 style="color:#92400e;">⏳ Payment Verification in Progress</h5>
+          <p style="margin: 4px 0;">1. <strong>Bank Statement Cross-Check:</strong> We have received your UPI Reference (UTR: <strong>{utr_number}</strong>). All direct UPI transfers are manually cross-checked against our HDFC Bank account statement to prevent fraud.</p>
+          <p style="margin: 4px 0;">2. <strong>Turnaround Time:</strong> Verification typically takes 15–30 minutes during active hours.</p>
+          <p style="margin: 4px 0;">3. <strong>Access Unlocking:</strong> Once approved by instructor Sachin Mishra, your final Paid Tax Invoice and VIP Discord Community Access will be automatically dispatched to your email and WhatsApp.</p>
+          <p style="margin: 4px 0;">4. <strong>Fast-Track Approval:</strong> Want instant 2-minute verification? Send your payment screenshot to Sachin on WhatsApp at <a href="https://wa.me/{INSTRUCTOR_PHONE.replace(' ', '').replace('+', '')}?text=Hi%20Sachin,%20I%20have%20paid%20via%20UPI%20for%20Production%20RAG.%20My%20UTR%20is%20{utr_number}." style="color:#0d9488; font-weight:700;">{INSTRUCTOR_PHONE}</a>.</p>
+        </div>
+        """
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -54,7 +83,7 @@ def generate_invoice_html(student: Dict[str, Any]) -> str:
     .header {{ display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0d9488; padding-bottom: 20px; margin-bottom: 24px; }}
     .brand {{ font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }}
     .brand span {{ color: #0d9488; }}
-    .badge {{ background: #ccfbf1; color: #0f766e; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 9999px; display: inline-block; margin-top: 4px; }}
+    .badge {{ font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 9999px; display: inline-block; margin-top: 4px; {badge_style} }}
     .inv-meta {{ text-align: right; font-size: 12px; color: #64748b; }}
     .inv-meta strong {{ color: #0f172a; font-size: 15px; display: block; margin-bottom: 4px; }}
     .grid {{ display: flex; justify-content: space-between; margin-bottom: 28px; font-size: 13px; }}
@@ -83,12 +112,12 @@ def generate_invoice_html(student: Dict[str, Any]) -> str:
     <div class="header">
       <div>
         <div class="brand">PRODUCTION<span>.RAG</span></div>
-        <div class="badge">OFFICIAL TAX INVOICE & RECEIPT</div>
+        <div class="badge">{badge_title}</div>
       </div>
       <div class="inv-meta">
         <strong>{invoice_num}</strong>
         <div>Date: {date_str}</div>
-        <div>Status: <span style="color:#059669; font-weight:700;">PAID & VERIFIED</span></div>
+        <div>Status: {status_html}</div>
       </div>
     </div>
 
@@ -134,7 +163,7 @@ def generate_invoice_html(student: Dict[str, Any]) -> str:
           <td class="text-right" style="color: #059669;">-₹900.00</td>
         </tr>
         <tr class="total-row">
-          <td colspan="3">Total Paid (INR)</td>
+          <td colspan="3">Total { "Paid" if is_confirmed else "Payable" } (INR)</td>
           <td class="text-right">₹{amount:,.2f}</td>
         </tr>
       </tbody>
@@ -144,12 +173,7 @@ def generate_invoice_html(student: Dict[str, Any]) -> str:
       Payment Method: <strong>{payment_method}</strong> &bull; Reference/UTR: <strong>{utr_number}</strong>
     </div>
 
-    <div class="notes-box">
-      <h5>Next Steps &amp; Cohort Onboarding</h5>
-      <p style="margin: 4px 0;">1. <strong>Direct Instructor Access:</strong> You can contact Sachin Mishra directly on WhatsApp at <strong>{INSTRUCTOR_PHONE}</strong> or email at <strong>{INSTRUCTOR_EMAIL}</strong> for any queries.</p>
-      <p style="margin: 4px 0;">2. <strong>VIP Discord Community:</strong> Join our private cohort Discord server right away for live announcements, pre-reading, and office hours: <a href="{DISCORD_INVITE_URL}" style="color:#5865F2; font-weight:700;" target="_blank">{DISCORD_INVITE_URL}</a></p>
-      <p style="margin: 4px 0;">3. <strong>Starter Codebase &amp; Schematics:</strong> Complete repository access and the 77-page MiG-29 manual will be delivered via email and pinned in the Discord #announcements channel.</p>
-    </div>
+    {notes_html}
 
     <div class="contact-bar">
       Need assistance? Contact Sachin Mishra at <a href="mailto:{INSTRUCTOR_EMAIL}">{INSTRUCTOR_EMAIL}</a> or WhatsApp <a href="https://wa.me/{INSTRUCTOR_PHONE.replace(' ', '').replace('+', '')}">{INSTRUCTOR_PHONE}</a>.<br>
@@ -165,43 +189,154 @@ def build_email_contents(student: Dict[str, Any]):
     student_name = student.get("name", "Engineer")
     student_email = student.get("email", "").strip().lower()
     amount = student.get("amount_inr", 8099)
-    utr_number = student.get("utr_number", "VERIFIED")
+    utr_number = student.get("utr_number", "PENDING_VERIFICATION")
     invoice_num = f"INV-PRAG-{str(student.get('id', student.get('_id', '000000')))[-6:].upper()}"
+    status = student.get("status", "pending_verification")
+    is_confirmed = status in ["confirmed", "paid"]
 
-    subject = f"Enrollment Confirmed & Invoice {invoice_num} - Production RAG Cohort 1"
-    
-    text_content = f"""Hi {student_name},
+    if is_confirmed:
+        subject = f"Enrollment Confirmed & Invoice {invoice_num} - Production RAG Cohort 1"
+        text_content = f"""Hi {student_name},
 
 Welcome to Cohort 1 of the Production RAG Masterclass!
 
-Your enrollment has been successfully registered and verified.
+Your enrollment and payment of ₹{amount:,} INR have been verified successfully.
 
 INVOICE SUMMARY:
 - Invoice Number: {invoice_num}
 - Course: Production RAG Live Cohort #1 (4 Weeks Live)
 - Amount Paid: ₹{amount:,} INR
 - Reference/UTR: {utr_number}
+- Status: PAID & VERIFIED
+
+VIP DISCORD COMMUNITY ACCESS:
+Join the official Production RAG VIP Discord Server right away:
+{DISCORD_INVITE_URL}
+
+You can introduce yourself in #introductions, network with cohort peers, and access pinned pre-reading materials prior to session #1.
 
 DIRECT INSTRUCTOR CONTACT:
 - Sachin Mishra (Senior Gen AI Engineer)
 - WhatsApp: {INSTRUCTOR_PHONE}
 - Email: {INSTRUCTOR_EMAIL}
 
-COMMUNITY ONBOARDING:
-Join the official Production RAG VIP Discord Server right away:
-{DISCORD_INVITE_URL}
-
-You can introduce yourself in #introductions, network with cohort peers, and access pinned pre-reading materials prior to session #1.
-
-If you have any questions, feel free to reply directly to this email or reach out on WhatsApp.
-
 Best regards,
 Sachin Mishra
 Senior Generative AI Engineer
 YouTube: @LocData | LinkedIn: sachin-mishra19566
 """
+    else:
+        subject = f"Payment Reference Received - Pending Bank Verification ({invoice_num})"
+        text_content = f"""Hi {student_name},
+
+Thank you for submitting your enrollment details for Production RAG Cohort 1!
+
+We have recorded your manual UPI transaction reference:
+- Registration / Invoice Ref: {invoice_num}
+- Course: Production RAG Live Cohort #1
+- Amount: ₹{amount:,} INR
+- UPI Reference / UTR Number: {utr_number}
+- Current Status: PENDING BANK VERIFICATION
+
+WHAT HAPPENS NEXT:
+1. All direct UPI transfers are manually cross-checked against our HDFC Bank account statement to prevent unverified registrations.
+2. Verification typically takes 15–30 minutes during active hours.
+3. Once instructor Sachin Mishra confirms receipt of ₹{amount:,} INR in the bank account, your official Paid Tax Invoice and VIP Discord Invitation Link will be automatically dispatched to this email address and your WhatsApp number.
+
+WANT FASTER APPROVAL?
+You can fast-track your verification by sending your payment screenshot directly to Sachin Mishra on WhatsApp:
+WhatsApp: {INSTRUCTOR_PHONE}
+
+Best regards,
+Admissions Team | Production RAG Masterclass
+Instructor: Sachin Mishra (sachin19566@gmail.com)
+"""
+
     html_content = generate_invoice_html(student)
     return subject, text_content, html_content
+
+def send_instructor_pending_alert(student: Dict[str, Any], approve_url: str):
+    """
+    Alerts instructor Sachin Mishra immediately on his personal email when a student submits a manual UPI UTR.
+    Provides student details and a 1-click verification approval link.
+    """
+    student_name = student.get("name", "Student")
+    student_email = student.get("email", "N/A")
+    student_phone = student.get("phone", "N/A")
+    utr_number = student.get("utr_number", "N/A")
+    amount = student.get("amount_inr", 8099)
+    record_id = student.get("id", "N/A")
+
+    subject = f"🚨 [Verification Required] New UPI Payment: {student_name} (UTR: {utr_number})"
+    text_content = f"""Hi Sachin,
+
+A student has submitted a manual UPI transfer for Production RAG Cohort 1:
+
+- Student Name: {student_name}
+- Email: {student_email}
+- WhatsApp: {student_phone}
+- Amount: ₹{amount:,} INR
+- UPI Reference / UTR: {utr_number}
+- Registration ID: {record_id}
+
+ACTION REQUIRED:
+1. Open your HDFC Bank app or Google Pay transaction history.
+2. Verify that ₹{amount:,} INR was received with UTR: {utr_number}.
+3. If received, click the 1-click approval link below to automatically mark this student as PAID and dispatch their VIP Discord invite:
+
+👉 APPROVE ENROLLMENT:
+{approve_url}
+
+Best regards,
+Production RAG Admissions System
+"""
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif; background:#f8fafc; padding:20px; color:#1e293b;">
+  <div style="max-width:560px; margin:0 auto; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px;">
+    <h2 style="color:#0f172a; margin-top:0;">🚨 New UPI Payment Pending Verification</h2>
+    <p style="font-size:14px; color:#64748b;">A student has submitted a manual UPI payment for <strong>Production RAG Cohort 1</strong>. Please cross-check your HDFC Bank account statement.</p>
+    
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin:16px 0; font-size:13px; line-height:1.6;">
+      <div><strong>Student Name:</strong> {student_name}</div>
+      <div><strong>Email:</strong> {student_email}</div>
+      <div><strong>WhatsApp Phone:</strong> {student_phone}</div>
+      <div><strong>Amount:</strong> ₹{amount:,} INR</div>
+      <div><strong>UPI Reference / UTR:</strong> <span style="font-family:monospace; background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:700;">{utr_number}</span></div>
+      <div><strong>Registration ID:</strong> {record_id}</div>
+    </div>
+
+    <div style="text-align:center; margin:24px 0;">
+      <a href="{approve_url}" style="background:#0d9488; color:#fff; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; font-size:14px; display:inline-block;">
+        ✓ Approve Payment &amp; Send Discord Invite
+      </a>
+    </div>
+
+    <p style="font-size:11px; color:#94a3b8; text-align:center; margin-bottom:0;">
+      Clicking approve will immediately update the database to PAID and dispatch the official Tax Invoice and Discord invite to the student.
+    </p>
+  </div>
+</body>
+</html>"""
+
+    # Send directly to Sachin's email
+    instructor_student_obj = {
+        "email": INSTRUCTOR_EMAIL,
+        "name": "Sachin Mishra"
+    }
+    
+    if BREVO_API_KEY:
+        try:
+            send_via_brevo(instructor_student_obj, subject, text_content, html_content)
+        except Exception as e:
+            print(f"[EmailService] Failed to send instructor alert via Brevo: {e}")
+    elif SMTP_PASSWORD:
+        try:
+            send_via_smtp(instructor_student_obj, subject, text_content, html_content)
+        except Exception as e:
+            print(f"[EmailService] Failed to send instructor alert via SMTP: {e}")
+
 
 def send_via_brevo(student: Dict[str, Any], subject: str, text_content: str, html_content: str) -> Dict[str, Any]:
     """

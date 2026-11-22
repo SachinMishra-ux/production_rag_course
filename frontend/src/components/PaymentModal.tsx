@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, ShieldCheck, QrCode, CreditCard, Smartphone, Copy, Check, Sparkles, ExternalLink, CheckCheck, Phone, FileText, Mail, MessageCircle, MessageSquare } from 'lucide-react';
+import { X, CheckCircle, ShieldCheck, QrCode, CreditCard, Smartphone, Copy, Check, Sparkles, ExternalLink, CheckCheck, Phone, FileText, Mail, MessageCircle, MessageSquare, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import sachinPhotoImg from '../assets/sachin_photo.jpg';
 
@@ -15,6 +15,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [utrNumber, setUtrNumber] = useState('');
+  const [hasPaidConfirmed, setHasPaidConfirmed] = useState(false);
+  const [submissionError, setSubmissionError] = useState('');
+  const [enrollmentStatus, setEnrollmentStatus] = useState<'pending_verification' | 'confirmed' | ''>('');
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -105,35 +109,43 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(studentPayload),
       });
+      const json = await res.json().catch(() => ({}));
       if (res.ok) {
-        const json = await res.json();
         if (json.student_id) {
           setEnrolledStudentId(json.student_id);
         }
+        const finalStatus = json.status || paymentDetails.status;
+        setEnrollmentStatus(finalStatus);
+        return { success: true, status: finalStatus };
+      } else {
+        const errorMsg = json.detail || "Registration failed. Please check your payment details.";
+        setSubmissionError(errorMsg);
+        return { success: false, error: errorMsg };
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Backend server not reached, saving to local persistent storage:", err);
-    }
-
-    // 2. Redundant LocalStorage backup: Guarantees zero data loss
-    try {
-      const existing = JSON.parse(localStorage.getItem('production_rag_enrolled_students') || '[]');
-      existing.push({
-        ...studentPayload,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('production_rag_enrolled_students', JSON.stringify(existing));
-    } catch (e) {
-      console.error("Local storage save error:", e);
+      // Redundant LocalStorage backup: Guarantees zero data loss
+      try {
+        const existing = JSON.parse(localStorage.getItem('production_rag_enrolled_students') || '[]');
+        existing.push({
+          ...studentPayload,
+          timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('production_rag_enrolled_students', JSON.stringify(existing));
+      } catch (e) {
+        console.error("Local storage save error:", e);
+      }
+      setEnrollmentStatus('pending_verification');
+      return { success: true, status: 'pending_verification' };
     }
   };
 
   const handleRazorpayCheckout = () => {
     if (!name || !email || !phone) {
-      alert("Please enter your Name, Email, and WhatsApp phone number before proceeding.");
+      setSubmissionError("Please enter your Name, Email, and WhatsApp phone number before proceeding.");
       return;
     }
-
+    setSubmissionError('');
     setIsProcessing(true);
 
     if (typeof (window as any).Razorpay !== 'undefined') {
@@ -153,15 +165,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
           color: "#0d9488"
         },
         handler: async function (response: any) {
-          await persistStudentToDatabase({
+          const res = await persistStudentToDatabase({
             payment_method: 'razorpay',
             razorpay_payment_id: response?.razorpay_payment_id,
             razorpay_order_id: response?.razorpay_order_id,
-            status: 'paid'
+            status: 'confirmed'
           });
           setIsProcessing(false);
-          setPaymentSuccess(true);
-          triggerConfetti();
+          if (res.success) {
+            setEnrollmentStatus('confirmed');
+            setPaymentSuccess(true);
+            triggerConfetti();
+          }
         },
         modal: {
           ondismiss: function () {
@@ -174,59 +189,83 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
         const rzp = new (window as any).Razorpay(options);
         rzp.on('payment.failed', function (resp: any) {
           setIsProcessing(false);
-          console.warn("Razorpay notice:", resp.error);
+          setSubmissionError("Payment gateway transaction cancelled or failed: " + (resp.error?.description || ""));
         });
         rzp.open();
       } catch (e) {
-        console.error("Razorpay error, falling back to simulated confirmation:", e);
-        setTimeout(async () => {
-          await persistStudentToDatabase({
-            payment_method: 'razorpay',
-            status: 'confirmed'
-          });
-          setIsProcessing(false);
-          setPaymentSuccess(true);
-          triggerConfetti();
-        }, 1200);
+        console.error("Razorpay error:", e);
+        setIsProcessing(false);
+        setSubmissionError("Unable to open Razorpay gateway. Please use the Direct UPI QR tab.");
       }
     } else {
-      setTimeout(async () => {
-        await persistStudentToDatabase({
-          payment_method: 'razorpay',
-          status: 'confirmed'
-        });
+      setTimeout(() => {
         setIsProcessing(false);
-        setPaymentSuccess(true);
-        triggerConfetti();
+        setSubmissionError("Payment gateway SDK loading. Please use Direct UPI QR or retry in a moment.");
       }, 1000);
     }
   };
 
   const handleUpiVerification = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !phone) {
-      alert("Please enter your Name, Email, and WhatsApp Phone number above.");
+    setSubmissionError('');
+
+    if (!name.trim() || !email.trim() || !phone.trim()) {
+      setSubmissionError("Please enter your Full Name, Email, and WhatsApp Phone number above.");
       return;
     }
-    if (!utrNumber || utrNumber.length < 6) {
-      alert("Please enter a valid 12-digit UPI Reference / UTR Number.");
+
+    if (!hasPaidConfirmed) {
+      setSubmissionError(`Please complete payment in your UPI app and tick: "I have transferred ₹${amountINR.toLocaleString('en-IN')}".`);
+      return;
+    }
+
+    const cleanUtr = utrNumber.trim();
+    if (cleanUtr.length !== 12 || !/^\d{12}$/.test(cleanUtr)) {
+      setSubmissionError("Invalid UTR Reference: It must be exactly 12 numeric digits from your UPI transaction receipt (e.g. 431289012345).");
       return;
     }
 
     setIsProcessing(true);
 
-    // Save directly to the database
-    await persistStudentToDatabase({
+    // Save directly to the database with pending_verification status
+    const result = await persistStudentToDatabase({
       payment_method: 'upi_qr',
-      utr_number: utrNumber.trim(),
-      status: 'confirmed'
+      utr_number: cleanUtr,
+      status: 'pending_verification'
     });
 
-    setTimeout(() => {
-      setIsProcessing(false);
+    setIsProcessing(false);
+
+    if (result.success) {
+      setEnrollmentStatus('pending_verification');
       setPaymentSuccess(true);
-      triggerConfetti();
-    }, 900);
+      // Notice: Do NOT trigger confetti for unverified manual transfer
+    }
+  };
+
+  const checkLiveStatus = async () => {
+    if (!enrolledStudentId && !email) return;
+    setIsCheckingStatus(true);
+    const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'https://production-rag-api-gwus.onrender.com';
+    try {
+      const param = enrolledStudentId ? `student_id=${enrolledStudentId}` : `email=${encodeURIComponent(email.trim().toLowerCase())}`;
+      const res = await fetch(`${backendUrl}/api/student-status?${param}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.is_verified || data.status === 'confirmed' || data.status === 'paid') {
+          setEnrollmentStatus('confirmed');
+          triggerConfetti();
+        } else {
+          alert(`Verification Status: ${data.message || 'Still under manual review against HDFC Bank statements.'}`);
+        }
+      } else {
+        alert("Unable to fetch status right now. Please try again or message Sachin on WhatsApp.");
+      }
+    } catch (e) {
+      alert("Network error checking status. Please check again in a moment.");
+    } finally {
+      setIsCheckingStatus(false);
+    }
   };
 
   return (
@@ -330,13 +369,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
 
             {/* Payment Method Selector Tabs */}
             <div className="mb-5">
-              <div className="text-xs font-mono text-slate-600 font-bold uppercase tracking-wider mb-2">
-                2. Select Payment Method
+              <div className="text-xs font-mono text-slate-600 font-bold uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>2. Select Payment Method</span>
+                <span className="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full font-bold">100% Secure Checkout</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setActiveTab('upi_qr')}
+                  onClick={() => { setActiveTab('upi_qr'); setSubmissionError(''); }}
                   className={`p-3 rounded-2xl border text-center font-mono text-xs transition-all flex flex-col items-center gap-1.5 ${
                     activeTab === 'upi_qr'
                       ? 'bg-teal-50 border-teal-600 text-teal-800 font-bold shadow-sm'
@@ -344,13 +384,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   }`}
                 >
                   <QrCode className="w-4 h-4 text-teal-600" />
-                  <span>Direct UPI QR</span>
-                  <span className="text-[9px] text-slate-500">GPay/PhonePe</span>
+                  <span>Manual UPI QR</span>
+                  <span className="text-[9px] text-amber-700 font-semibold">Bank Verified</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setActiveTab('razorpay')}
+                  onClick={() => { setActiveTab('razorpay'); setSubmissionError(''); }}
                   className={`p-3 rounded-2xl border text-center font-mono text-xs transition-all flex flex-col items-center gap-1.5 ${
                     activeTab === 'razorpay'
                       ? 'bg-teal-50 border-teal-600 text-teal-800 font-bold shadow-sm'
@@ -358,13 +398,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   }`}
                 >
                   <CreditCard className="w-4 h-4 text-teal-600" />
-                  <span>Razorpay</span>
-                  <span className="text-[9px] text-slate-500">Cards/NetBanking</span>
+                  <span>Instant Gateway</span>
+                  <span className="text-[9px] text-emerald-700 font-semibold">Auto-Activated</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setActiveTab('stripe')}
+                  onClick={() => { setActiveTab('stripe'); setSubmissionError(''); }}
                   className={`p-3 rounded-2xl border text-center font-mono text-xs transition-all flex flex-col items-center gap-1.5 ${
                     activeTab === 'stripe'
                       ? 'bg-teal-50 border-teal-600 text-teal-800 font-bold shadow-sm'
@@ -378,7 +418,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               </div>
             </div>
 
-            {/* Tab 1: Direct UPI QR Code (Primary) */}
+            {/* Error Banner */}
+            {submissionError && (
+              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">{submissionError}</div>
+              </div>
+            )}
+
+            {/* Tab 1: Direct UPI QR Code (Manual Payment with Bank Verification) */}
             {activeTab === 'upi_qr' && (
               <div className="space-y-4">
                 <div className="flex flex-col items-center p-4 bg-slate-50 rounded-2xl border border-slate-200">
@@ -391,7 +439,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   </div>
                   <div className="text-center mt-3 w-full">
                     <div className="text-xs font-mono text-slate-700 font-semibold">
-                      Scan with Google Pay, PhonePe, or Paytm (₹{amountINR.toLocaleString('en-IN')})
+                      Step 1: Scan with GPay, PhonePe, or Paytm (₹{amountINR.toLocaleString('en-IN')})
                     </div>
                     
                     {/* Payee Details */}
@@ -440,40 +488,93 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   Open in UPI App (Pay ₹{amountINR.toLocaleString('en-IN')})
                 </a>
 
-                {/* Verification form */}
-                <form onSubmit={handleUpiVerification} className="space-y-3">
+                {/* Step 2: Verification Form with Strict Checklist */}
+                <form onSubmit={handleUpiVerification} className="space-y-3.5 bg-slate-50/90 p-4 rounded-2xl border border-slate-200">
+                  <div className="text-xs font-mono text-slate-700 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Step 2: Bank Statement Verification</span>
+                  </div>
+
+                  {/* Payment Completed Confirmation Checkbox */}
+                  <label className="flex items-start gap-2.5 cursor-pointer bg-white p-3 rounded-xl border border-slate-300 hover:border-teal-500 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={hasPaidConfirmed}
+                      onChange={(e) => setHasPaidConfirmed(e.target.checked)}
+                      className="mt-0.5 rounded text-teal-600 focus:ring-teal-500 w-4 h-4"
+                    />
+                    <span className="text-xs text-slate-700 font-mono leading-tight">
+                      I have completed the transfer of <strong>₹{amountINR.toLocaleString('en-IN')}</strong> via UPI and have my 12-digit UTR receipt number.
+                    </span>
+                  </label>
+
+                  {/* 12-Digit Numeric UTR Input */}
                   <div>
-                    <label className="block text-[11px] font-mono text-slate-600 mb-1">
-                      Already paid? Enter 12-digit UPI Reference / UTR Number:
-                    </label>
+                    <div className="flex justify-between items-center text-[11px] font-mono text-slate-600 mb-1">
+                      <span>Enter 12-digit UPI Reference / UTR Number:</span>
+                      <span className={`font-bold ${utrNumber.length === 12 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                        {utrNumber.length}/12 digits
+                      </span>
+                    </div>
                     <input
                       type="text"
-                      placeholder="e.g. 431289012345"
-                      value={uttrNumberOrEmpty(utrNumber)}
-                      onChange={(e) => setUtrNumber(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-lg bg-white border border-slate-300 text-slate-900 font-mono focus:border-teal-600"
+                      inputMode="numeric"
+                      pattern="[0-9]{12}"
+                      maxLength={12}
+                      disabled={!hasPaidConfirmed}
+                      placeholder="e.g. 431289012345 (from GPay / PhonePe receipt)"
+                      value={utrNumber}
+                      onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                      className={`w-full px-3 py-2.5 text-xs rounded-xl border font-mono transition-colors ${
+                        !hasPaidConfirmed
+                          ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                          : utrNumber.length === 12
+                          ? 'bg-white border-emerald-500 text-slate-900 focus:border-emerald-600'
+                          : 'bg-white border-slate-300 text-slate-900 focus:border-teal-600'
+                      }`}
                       required
                     />
+                    <p className="text-[10px] text-slate-500 font-mono mt-1 leading-normal">
+                      Where to find it: Open transaction in Google Pay / PhonePe / Paytm → copy 12-digit "UPI Ref No" or "UTR". Duplicate or fake UTRs are automatically rejected.
+                    </p>
                   </div>
+
                   <button
                     type="submit"
-                    disabled={isProcessing}
-                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs font-mono shadow-sm transition-all"
+                    disabled={isProcessing || !hasPaidConfirmed || utrNumber.length !== 12}
+                    className={`w-full py-3 rounded-xl font-bold text-xs font-mono shadow-sm transition-all flex items-center justify-center gap-2 ${
+                      !hasPaidConfirmed || utrNumber.length !== 12
+                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
+                    }`}
                   >
-                    {isProcessing ? "Saving Registration to Database..." : "Confirm UPI Payment & Activate Access"}
+                    {isProcessing ? "Submitting for Verification..." : "Submit UTR for Bank Verification"}
                   </button>
+
+                  <div className="text-[10px] text-slate-500 font-mono text-center flex items-center justify-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-teal-600" />
+                    <span>Cross-checked against HDFC Bank statement before access is unlocked.</span>
+                  </div>
                 </form>
               </div>
             )}
 
-            {/* Tab 2: Razorpay */}
+            {/* Tab 2: Razorpay (Automated Instant Bank Verification) */}
             {activeTab === 'razorpay' && (
               <div className="space-y-4">
-                <div className="rounded-2xl p-4 bg-teal-50/50 border border-teal-100 text-xs text-slate-600 leading-relaxed">
-                  <div className="flex items-center gap-2 text-teal-800 font-bold font-mono mb-1">
-                    <Sparkles className="w-4 h-4 text-teal-600" /> Instant 1-Click Razorpay Gateway
+                <div className="rounded-2xl p-4 bg-teal-50/60 border border-teal-200 text-xs text-slate-700 leading-relaxed space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-teal-900 font-bold font-mono">
+                      <Sparkles className="w-4 h-4 text-teal-600" />
+                      <span>Instant 1-Click Bank Gateway</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                      Zero Waiting Time
+                    </span>
                   </div>
-                  Pay via Google Pay, PhonePe, Paytm, BHIM, NetBanking, Credit/Debit Cards, EMI.
+                  <p className="text-[11px] text-slate-600">
+                    Pay via <strong>Dynamic UPI QR, Google Pay, PhonePe, Paytm, Cards, NetBanking, or EMI</strong>. Payments are cryptographically verified by bank servers instantly, unlocking your VIP Discord community and official Paid Invoice in real-time.
+                  </p>
                 </div>
 
                 <button
@@ -482,7 +583,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   disabled={isProcessing}
                   className="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm font-mono shadow-md transition-all flex items-center justify-center gap-2"
                 >
-                  {isProcessing ? "Connecting to Payment Gateway..." : `Pay ₹${amountINR.toLocaleString('en-IN')} via Razorpay`}
+                  {isProcessing ? "Connecting to Gateway..." : `Pay ₹${amountINR.toLocaleString('en-IN')} with Instant Verification`}
                 </button>
               </div>
             )}
@@ -514,15 +615,96 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             </div>
 
           </div>
+        ) : enrollmentStatus === 'pending_verification' ? (
+          /* State A: Manual UPI Submitted - Pending Bank Verification (Fraud Prevention) */
+          <div className="text-center py-6 space-y-4">
+            <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto animate-pulse">
+              <Clock className="w-10 h-10" />
+            </div>
+            
+            <h3 className="text-2xl font-bold text-slate-900">
+              Payment Under Verification ⏳
+            </h3>
+
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-mono">
+              <span>Status:</span>
+              <strong className="text-amber-950 font-bold">PENDING HDFC BANK CHECK</strong>
+            </div>
+
+            <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+              Thank you, <span className="text-slate-900 font-bold">{name || "Engineer"}</span>! We have received your 12-digit UPI reference (UTR: <strong className="font-mono text-slate-900">{utrNumber}</strong>). All direct UPI transfers are manually cross-checked against our HDFC Bank account statement to prevent unverified registrations.
+            </p>
+
+            {/* Verification Timeline Box */}
+            <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-200 text-left space-y-2 font-mono text-xs">
+              <div className="font-bold text-amber-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-700" />
+                <span>Verification &amp; Onboarding Timeline:</span>
+              </div>
+              <ul className="text-slate-700 space-y-1.5 text-[11px] leading-relaxed">
+                <li>• <strong>Turnaround Time:</strong> Verification takes <strong>15–30 minutes</strong> during active hours.</li>
+                <li>• <strong>Access Unlocking:</strong> Once instructor Sachin Mishra confirms receipt of ₹{amountINR.toLocaleString('en-IN')}, your official <strong>Paid Tax Invoice</strong> and <strong>VIP Discord Invitation Link</strong> will be sent to <strong>{email}</strong> and your WhatsApp.</li>
+              </ul>
+            </div>
+
+            {/* Fast-Track WhatsApp Approval */}
+            <div className="rounded-2xl p-3.5 bg-emerald-50/80 border border-emerald-200 text-left space-y-2">
+              <div className="text-xs font-mono font-bold text-emerald-900 flex items-center gap-1.5">
+                <MessageCircle className="w-4 h-4 text-emerald-700" />
+                <span>Want Instant 2-Minute Approval?</span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
+                Send your payment receipt screenshot directly to Sachin Mishra on WhatsApp for immediate 2-minute approval:
+              </p>
+              <a
+                href={`https://wa.me/91${upiPhoneNumber}?text=${encodeURIComponent(`Hi Sachin, I have paid ₹${amountINR} via UPI for Production RAG Cohort 1. My name is ${name} and my UTR is ${utrNumber}. Here is my screenshot for verification.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm font-mono text-xs"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>WhatsApp Payment Screenshot to Sachin</span>
+              </a>
+            </div>
+
+            {/* Actions: Check Status & Return */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-1 font-mono text-xs">
+              <button
+                type="button"
+                onClick={checkLiveStatus}
+                disabled={isCheckingStatus}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isCheckingStatus ? 'animate-spin' : ''}`} />
+                <span>{isCheckingStatus ? "Checking..." : "Check Verification Status"}</span>
+              </button>
+              <a
+                href={`${(import.meta as any).env?.VITE_BACKEND_URL || 'https://production-rag-api-gwus.onrender.com'}/api/invoice/${enrolledStudentId || encodeURIComponent(email)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5 text-teal-600" />
+                <span>View Pending Receipt</span>
+              </a>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-mono text-xs font-semibold transition-colors mt-2"
+            >
+              Done / Return to Site
+            </button>
+          </div>
         ) : (
-          /* Payment Success State */
+          /* State B: Payment Verified & Confirmed (Instant Gateway or Approved by Instructor) */
           <div className="text-center py-6 space-y-4">
             <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto animate-bounce">
               <CheckCircle className="w-10 h-10" />
             </div>
             
             <h3 className="text-2xl font-bold text-slate-900">
-              Enrollment Confirmed! 🎉
+              Enrollment Confirmed &amp; Verified! 🎉
             </h3>
 
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-mono">
@@ -533,7 +715,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             </div>
 
             <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-              Welcome to Cohort 1 of <span className="text-teal-700 font-bold">Production RAG</span>, <span className="text-slate-900 font-bold">{name || "Engineer"}</span>! Your official Tax Invoice and cohort enrollment confirmation have been dispatched to <span className="text-teal-700 font-mono font-semibold">{email || "your registered email"}</span>.
+              Welcome to Cohort 1 of <span className="text-teal-700 font-bold">Production RAG</span>, <span className="text-slate-900 font-bold">{name || "Engineer"}</span>! Your payment has been verified. Your official Paid Tax Invoice and cohort enrollment confirmation have been dispatched to <span className="text-teal-700 font-mono font-semibold">{email || "your registered email"}</span>.
             </p>
 
             {/* Instant Tax Invoice Download Button */}
@@ -580,7 +762,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                 <span>Instructor Direct Contact (Sachin Mishra)</span>
               </div>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                Have any pre-session questions or want immediate confirmation? Reach out directly:
+                Have any pre-session questions or need assistance? Reach out directly:
               </p>
               <div className="flex flex-col sm:flex-row gap-2 pt-1 font-mono text-xs">
                 <a
