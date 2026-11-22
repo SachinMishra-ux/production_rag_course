@@ -215,11 +215,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
       return;
     }
 
-    if (!hasPaidConfirmed) {
-      setSubmissionError(`Please complete payment in your UPI app and tick: "I have transferred ₹${amountINR.toLocaleString('en-IN')}".`);
-      return;
-    }
-
     const cleanUtr = utrNumber.trim();
     if (cleanUtr.length !== 12 || !/^\d{12}$/.test(cleanUtr)) {
       setSubmissionError("Invalid UTR Reference: It must be exactly 12 numeric digits from your UPI transaction receipt (e.g. 431289012345).");
@@ -240,7 +235,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     if (result.success) {
       setEnrollmentStatus('pending_verification');
       setPaymentSuccess(true);
-      // Notice: Do NOT trigger confetti for unverified manual transfer
+
+      // Auto-trigger WhatsApp notification to Sachin Mishra with student details and UTR
+      const waMessage = `Hi Sachin, I have completed the UPI payment of ₹${amountINR.toLocaleString('en-IN')} for Production RAG Cohort 1.\n\n👤 Student Name: ${name.trim()}\n📧 Registered Email: ${email.trim()}\n📱 WhatsApp: ${phone.trim()}\n🔢 12-digit UTR: ${cleanUtr}\n\nPlease verify and approve my enrollment.`;
+      const waUrl = `https://wa.me/91${upiPhoneNumber}?text=${encodeURIComponent(waMessage)}`;
+      try {
+        window.open(waUrl, '_blank');
+      } catch (err) {
+        console.warn("Could not auto-open WhatsApp tab:", err);
+      }
     }
   };
 
@@ -268,6 +271,31 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
       setIsCheckingStatus(false);
     }
   };
+
+  // Real-time auto-polling: Polls approval status every 6 seconds when student is waiting
+  React.useEffect(() => {
+    if (!paymentSuccess || enrollmentStatus !== 'pending_verification') return;
+    
+    const intervalId = setInterval(async () => {
+      const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'https://production-rag-api-gwus.onrender.com';
+      try {
+        const param = enrolledStudentId ? `student_id=${enrolledStudentId}` : `email=${encodeURIComponent(email.trim().toLowerCase())}`;
+        const res = await fetch(`${backendUrl}/api/student-status?${param}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.is_verified || data.status === 'confirmed' || data.status === 'paid') {
+            setEnrollmentStatus('confirmed');
+            triggerConfetti();
+            clearInterval(intervalId);
+          }
+        }
+      } catch (err) {
+        // Silently continue polling
+      }
+    }, 6000);
+
+    return () => clearInterval(intervalId);
+  }, [paymentSuccess, enrollmentStatus, enrolledStudentId, email]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
@@ -543,6 +571,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                         Payment completed? Enter the <strong>12-digit UPI Reference / UTR Number</strong> from your GPay, PhonePe, or Paytm receipt to verify your enrollment.
                       </div>
 
+                      {/* Submission Error inside Step 2 */}
+                      {submissionError && (
+                        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                          <div className="leading-relaxed">{submissionError}</div>
+                        </div>
+                      )}
+
                       {/* 12-Digit Numeric UTR Input */}
                       <div>
                         <div className="flex justify-between items-center text-[11px] font-mono text-slate-600 mb-1">
@@ -683,22 +719,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             </div>
 
             {/* Fast-Track WhatsApp Approval */}
-            <div className="rounded-2xl p-3.5 bg-emerald-50/80 border border-emerald-200 text-left space-y-2">
-              <div className="text-xs font-mono font-bold text-emerald-900 flex items-center gap-1.5">
-                <MessageCircle className="w-4 h-4 text-emerald-700" />
-                <span>Want Instant 2-Minute Approval?</span>
+            <div className="rounded-2xl p-4 bg-emerald-50/90 border border-emerald-300 text-left space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-mono font-bold text-emerald-950 flex items-center gap-1.5">
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>WhatsApp &amp; Email Notification Sent</span>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                  Live Polling Active
+                </span>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
-                Send your payment receipt screenshot directly to Sachin Mishra on WhatsApp for immediate 2-minute approval:
+              <p className="text-[11px] text-slate-700 leading-relaxed font-sans">
+                A verification alert has been dispatched to <strong>Sachin Mishra (+91 8928450584)</strong>. Tap below if WhatsApp did not open automatically on your device:
               </p>
               <a
-                href={`https://wa.me/91${upiPhoneNumber}?text=${encodeURIComponent(`Hi Sachin, I have paid ₹${amountINR} via UPI for Production RAG Cohort 1. My name is ${name} and my UTR is ${utrNumber}. Here is my screenshot for verification.`)}`}
+                href={`https://wa.me/91${upiPhoneNumber}?text=${encodeURIComponent(`Hi Sachin, I have completed the UPI payment of ₹${amountINR.toLocaleString('en-IN')} for Production RAG Cohort 1.\n\n👤 Student Name: ${name.trim()}\n📧 Registered Email: ${email.trim()}\n📱 WhatsApp: ${phone.trim()}\n🔢 12-digit UTR: ${utrNumber}\n\nPlease verify and approve my enrollment.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm font-mono text-xs"
+                className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center gap-2 transition-colors shadow-sm font-mono text-xs"
               >
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>WhatsApp Payment Screenshot to Sachin</span>
+                <span>Message Sachin on WhatsApp (+91 8928450584)</span>
               </a>
             </div>
 
