@@ -65,6 +65,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPayment }) => {
                 Curriculum & Labs
               </div>
               <ul className="space-y-2 font-mono text-xs">
+                <li><a href="#sales-video" className="hover:text-teal-600 font-semibold text-slate-700">Course Overview Video</a></li>
                 <li><a href="#video-overview" className="hover:text-teal-600">Architecture Demo</a></li>
                 <li><a href="#curriculum" className="hover:text-teal-600">4-Week Syllabus</a></li>
                 <li><a href="#monetization" className="hover:text-teal-600">Career & Freelancing ROI</a></li>

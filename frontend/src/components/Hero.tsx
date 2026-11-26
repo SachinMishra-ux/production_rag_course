@@ -61,11 +61,15 @@ export const Hero: React.FC<HeroProps> = ({ onOpenPayment, onScrollToVideo }) =>
             </button>
 
             <button
-              onClick={onScrollToVideo}
+              onClick={() => {
+                const el = document.getElementById('sales-video');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                else onScrollToVideo();
+              }}
               className="w-full sm:w-auto px-5 sm:px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-2.5"
             >
-              <Play className="w-4 h-4 text-teal-600 fill-teal-600" />
-              <span>Watch Architecture Walkthrough</span>
+              <Play className="w-4 h-4 text-red-600 fill-red-600" />
+              <span>Watch Course Overview Video</span>
             </button>
           </div>
 

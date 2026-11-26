@@ -72,8 +72,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenPayment, seatsRemaining = 
             </a>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs font-semibold uppercase tracking-wider text-slate-600 shrink-0">
-              <a href="#video-overview" className="hover:text-teal-600 transition-colors whitespace-nowrap">Overview</a>
+            <div className="hidden lg:flex items-center gap-4 xl:gap-6 text-xs font-semibold uppercase tracking-wider text-slate-600 shrink-0">
+              <a href="#sales-video" className="hover:text-teal-600 transition-colors whitespace-nowrap text-teal-700 font-bold">Course Video</a>
+              <a href="#video-overview" className="hover:text-teal-600 transition-colors whitespace-nowrap">Architecture</a>
               <a href="#curriculum" className="hover:text-teal-600 transition-colors whitespace-nowrap">Curriculum</a>
               <a href="#monetization" className="hover:text-teal-600 transition-colors text-teal-700 whitespace-nowrap">Career ROI</a>
               <a href="#mentor" className="hover:text-teal-600 transition-colors whitespace-nowrap">Instructor</a>
@@ -130,7 +131,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenPayment, seatsRemaining = 
         {/* Mobile dropdown */}
         {mobileMenuOpen && (
           <div className="lg:hidden bg-white border-b border-slate-200 px-5 py-5 space-y-3 text-sm font-medium text-slate-700 shadow-lg">
-            <a href="#video-overview" onClick={() => setMobileMenuOpen(false)} className="block py-1 hover:text-teal-600">Video Walkthrough</a>
+            <a href="#sales-video" onClick={() => setMobileMenuOpen(false)} className="block py-1 hover:text-teal-600 text-teal-700 font-bold">Watch Course Video</a>
+            <a href="#video-overview" onClick={() => setMobileMenuOpen(false)} className="block py-1 hover:text-teal-600">Architecture Demo</a>
             <a href="#curriculum" onClick={() => setMobileMenuOpen(false)} className="block py-1 hover:text-teal-600">Curriculum (4 Weeks)</a>
             <a href="#monetization" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-teal-700 font-semibold">Career & Freelancing ROI</a>
             <a href="#mentor" onClick={() => setMobileMenuOpen(false)} className="block py-1 hover:text-teal-600">Instructor: Sachin Mishra</a>

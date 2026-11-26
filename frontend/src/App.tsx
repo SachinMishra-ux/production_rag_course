@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { CourseSalesVideo } from './components/CourseSalesVideo';
 import { VideoPlayer } from './components/VideoPlayer';
 import { Curriculum } from './components/Curriculum';
 import { CareerMonetization } from './components/CareerMonetization';
@@ -45,6 +46,11 @@ export default function App() {
         <Hero
           onOpenPayment={() => setIsPaymentModalOpen(true)}
           onScrollToVideo={handleScrollToVideo}
+        />
+
+        {/* Official Course Sales & Overview Video */}
+        <CourseSalesVideo
+          onOpenPayment={() => setIsPaymentModalOpen(true)}
         />
 
         {/* System Architecture Video Walkthrough */}
