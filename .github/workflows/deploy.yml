@@ -31,6 +31,14 @@ jobs:
       - name: Create .nojekyll
         run: touch frontend/dist/.nojekyll
 
+      - name: Setup gh-pages Vercel compatibility
+        run: |
+          mkdir -p frontend/dist/frontend
+          cp -r frontend/dist/assets frontend/dist/frontend/ 2>/dev/null || true
+          cp frontend/dist/index.html frontend/dist/frontend/ 2>/dev/null || true
+          echo '{"framework": null, "outputDirectory": "."}' > frontend/dist/frontend/vercel.json
+          echo '{"framework": null, "outputDirectory": "."}' > frontend/dist/vercel.json
+
       - name: Deploy to GitHub Pages Branch
         uses: peaceiris/actions-gh-pages@v4
         with:

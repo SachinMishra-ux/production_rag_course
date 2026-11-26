@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "bash -c 'if [ \"$VERCEL_GIT_COMMIT_REF\" = \"gh-pages\" ]; then exit 0; else exit 1; fi'",
   "framework": null,
   "installCommand": "cd frontend && npm install",
   "buildCommand": "cd frontend && npm install && npm run build && cd .. && rm -rf dist && cp -r frontend/dist dist",
