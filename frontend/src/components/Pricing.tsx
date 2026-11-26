@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, ShieldCheck, ArrowRight, Clock, Users, Tag, Sparkles, Copy, CheckCheck } from 'lucide-react';
+import { Check, ShieldCheck, ArrowRight, Clock, Users, Tag, Sparkles, Copy, CheckCheck, Calendar } from 'lucide-react';
 
 interface PricingProps {
   onOpenPayment: () => void;
@@ -59,8 +59,8 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenPayment, seatsRemaining 
             
             {/* Header */}
             <div className="border-b border-slate-100 pb-6 text-center">
-              <span className="text-[11px] font-mono text-teal-700 font-semibold bg-teal-50 border border-teal-200 px-3 py-1 rounded-full">
-                LIVE INTERACTIVE COHORT
+              <span className="text-[11px] font-mono text-teal-700 font-bold bg-teal-50 border border-teal-200 px-3 py-1 rounded-full">
+                BATCH #1 STARTS SUN, 27 DEC 2026 • 3:00 PM IST
               </span>
               <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-3">Full Masterclass Pass</h3>
               <p className="text-xs font-mono text-slate-500 mt-1">4 Weeks Live • Production Codebase • 20-30 LPA Interview Kit • Freelance Retainers</p>
@@ -89,9 +89,15 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenPayment, seatsRemaining 
                 (International Students: $99 USD via Stripe / Card)
               </div>
 
-              <div className="mt-3.5 inline-flex items-center gap-2 text-xs font-mono text-slate-700 bg-teal-50/70 py-1.5 px-3.5 rounded-full border border-teal-200">
-                <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse"></span>
-                <span>Cohort Cap: 35 Seats • <strong className="text-teal-800 font-bold">{seatsRemaining} seats remaining</strong></span>
+              <div className="mt-3.5 flex flex-col items-center gap-1.5">
+                <div className="inline-flex items-center gap-2 text-xs font-mono text-slate-700 bg-teal-50/70 py-1.5 px-3.5 rounded-full border border-teal-200">
+                  <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse"></span>
+                  <span>Cohort Cap: 35 Seats • <strong className="text-teal-800 font-bold">{seatsRemaining} seats remaining</strong></span>
+                </div>
+                <div className="text-[11px] font-mono text-teal-800 font-bold flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Starts Sunday, 27 Dec 2026 at 3:00 PM IST (Weekends Live)</span>
+                </div>
               </div>
 
               {/* Promo Code Input & Copy Box */}
@@ -143,7 +149,7 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenPayment, seatsRemaining 
               </div>
               
               {[
-                "4 Weeks of Live Weekend Interactive Coding Sessions with Sachin Mishra",
+                "4 Weeks of Live Weekend Interactive Coding Sessions starting Sunday, 27 Dec 2026 (3:00 PM IST)",
                 "Complete Production Codebase: FastAPI + ColPali + Hybrid Vector DB + Redis + Docker",
                 "Scanned MiG-29 Manual & 200+ Heavy Technical Document Stress-Test Dataset",
                 "Production Deployment Configurations for Docker, AWS & GCP",

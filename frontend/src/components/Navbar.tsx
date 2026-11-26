@@ -38,8 +38,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenPayment, seatsRemaining = 
         <span className="inline-flex items-center gap-1.5 bg-teal-100 text-teal-800 border border-teal-200 px-2.5 py-0.5 rounded-full text-[11px] font-semibold shrink-0">
           <Sparkles className="w-3 h-3 text-teal-600" /> Cohort 1 Enrollment Open
         </span>
-        <span className="hidden md:inline text-teal-800 text-xs">
-          Limited to 35 engineers ({seatsRemaining} seats remaining) for hands-on code reviews & live architecture sessions.
+        <span className="hidden md:inline text-teal-900 text-xs font-semibold">
+          🚀 Starts Sunday, 27 Dec 2026 (3:00 PM IST) • Limited to 35 engineers ({seatsRemaining} seats remaining)
         </span>
         <span className="inline-flex items-center gap-1 text-teal-900 font-semibold text-[11px] sm:text-xs shrink-0">
           <Clock className="w-3.5 h-3.5 text-teal-600" /> Early Bird (Code: EARLYBIRD10): {String(timeLeft.hours).padStart(2, '0')}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s

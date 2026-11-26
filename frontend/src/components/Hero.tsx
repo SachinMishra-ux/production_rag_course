@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, CheckCircle2, FileText, Database, Cpu, TrendingUp, ArrowRight, ShieldCheck, Layers, Sparkles, Linkedin, Youtube } from 'lucide-react';
+import { Play, CheckCircle2, FileText, Database, Cpu, TrendingUp, ArrowRight, ShieldCheck, Layers, Sparkles, Linkedin, Youtube, Calendar } from 'lucide-react';
 
 interface HeroProps {
   onOpenPayment: () => void;
@@ -17,15 +17,16 @@ export const Hero: React.FC<HeroProps> = ({ onOpenPayment, onScrollToVideo }) =>
         
         {/* Cohort Pill */}
         <div className="flex justify-center mb-6">
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm text-slate-700">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white border border-teal-200 shadow-sm text-slate-800">
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
             </span>
-            <span className="text-xs font-medium">
-              3 to 4-Week Live Intensive Cohort • Weekends Live Online
+            <span className="text-xs font-semibold text-teal-950 flex items-center gap-1.5 font-mono">
+              <Calendar className="w-3.5 h-3.5 text-teal-600" />
+              <span>Starts Sunday, 27 December 2026 • 3:00 PM IST Onwards</span>
             </span>
-            <span className="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-200">
+            <span className="bg-teal-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">
               BATCH #1
             </span>
           </div>
@@ -73,8 +74,8 @@ export const Hero: React.FC<HeroProps> = ({ onOpenPayment, onScrollToVideo }) =>
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" /> Production Codebase
             </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" /> Live Weekend Classes
+            <span className="flex items-center gap-1.5 font-semibold text-teal-800">
+              <Calendar className="w-4 h-4 text-teal-600 shrink-0" /> Starts Sun, 27 Dec (3 PM IST)
             </span>
             <span className="flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-indigo-600 shrink-0" /> 1:1 Reviews with Sachin

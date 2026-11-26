@@ -10,8 +10,8 @@ export const FAQ: React.FC = () => {
       a: "99% of online tutorials build 'toy RAG'—they take a clean 2-page text file, use RecursiveCharacterTextSplitter, insert 10 embeddings into ChromaDB, and call it a day. In the real world, documents are 77-page scanned manuals (like the MiG-29 manual in our repo) where standard extractors return 0 characters. Real production systems choke under 100+ document uploads and concurrency. This course teaches you multimodal vision indexing (ColPali), hybrid search, reranking, async FastAPI architectures, and evaluation systems that survive production."
     },
     {
-      q: "What is the class schedule and time commitment?",
-      a: "The cohort runs for 3 to 4 weeks with live interactive sessions on Saturdays and Sundays (2.5 hours each). All live sessions include live coding, Q&A, and direct code reviews. Expect to spend 3-4 hours during the week on assignments and hands-on repository labs."
+      q: "When does the cohort start and what is the schedule?",
+      a: "Cohort #1 officially begins on Sunday, 27 December 2026, from 3:00 PM IST onwards. Live interactive sessions are conducted on weekends (Saturdays and Sundays, 2.5 hours each) with live coding, Q&A, and direct repository reviews by Sachin Mishra. All live sessions are recorded with lifetime access."
     },
     {
       q: "What if I miss a live session due to work or personal commitments?",

@@ -315,7 +315,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             {/* Modal Header */}
             <div className="mb-5">
               <span className="text-[11px] font-mono text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full font-bold">
-                ENROLLMENT CHECKOUT • BATCH #1
+                ENROLLMENT CHECKOUT • STARTS SUN, 27 DEC 2026 (3 PM IST)
               </span>
               <h3 className="text-2xl font-bold text-slate-900 mt-2">
                 Join Production RAG Cohort
@@ -713,6 +713,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                 <span>Verification &amp; Onboarding Timeline:</span>
               </div>
               <ul className="text-slate-700 space-y-1.5 text-[11px] leading-relaxed">
+                <li>• <strong>Cohort Launch:</strong> Starting <strong>Sunday, 27 December 2026, at 3:00 PM IST onwards</strong>.</li>
                 <li>• <strong>Turnaround Time:</strong> Verification takes <strong>15–30 minutes</strong> during active hours.</li>
                 <li>• <strong>Access Unlocking:</strong> Once instructor Sachin Mishra confirms receipt of ₹{amountINR.toLocaleString('en-IN')}, your official <strong>Paid Tax Invoice</strong> and <strong>VIP Discord Invitation Link</strong> will be sent to <strong>{email}</strong> and your WhatsApp.</li>
               </ul>

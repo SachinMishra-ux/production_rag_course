@@ -209,6 +209,11 @@ INVOICE SUMMARY:
 - Reference/UTR: {utr_number}
 - Status: PAID & VERIFIED
 
+COHORT SCHEDULE & FIRST SESSION:
+- Official Start Date: Sunday, 27 December 2026
+- First Session Time: 3:00 PM IST Onwards
+- Mode: Live Interactive Weekend Sessions (Recordings + Repo Access Included)
+
 VIP DISCORD COMMUNITY ACCESS:
 Join the official Production RAG VIP Discord Server right away:
 {DISCORD_INVITE_URL}
